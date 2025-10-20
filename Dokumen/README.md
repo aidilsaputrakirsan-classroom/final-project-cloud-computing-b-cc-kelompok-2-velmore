@@ -103,7 +103,7 @@ Pengguna dapat keluar kapan saja. Sistem kembali ke halaman login.
 ---
 
 ### 2. Dashboard
-![Dashboard Utama](wireframe/dashboard.png)
+![Dashboard Utama](wireframe/Dashboard.png)
 > Halaman utama setelah login, berisi statistik jumlah buku, kategori, anggota, dan transaksi.  
 
 - Sidebar navigasi menuju fitur lain  
@@ -113,7 +113,7 @@ Pengguna dapat keluar kapan saja. Sistem kembali ke halaman login.
 ---
 
 ### 3. Profile Pengguna
-![Profile](wireframe/profile.png)
+![Profile](wireframe/Profile.png)
 > Menampilkan data profil pengguna: foto, nama, NIM, prodi, alamat, dan nomor telepon.  
 > Tombol **Edit Profil** tersedia untuk memperbarui data.
 
