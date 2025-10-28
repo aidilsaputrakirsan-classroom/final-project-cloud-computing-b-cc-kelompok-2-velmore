@@ -11,11 +11,11 @@ class AuthController extends Controller
     {
         // Kalau sudah login, arahkan ke dashboard sesuai role
         if (session()->has('admin')) {
-            return redirect('/dashboard-admin');
+            return redirect('/dashboard.admin');
         }
 
         if (session()->has('user')) {
-            return redirect('/dashboard-user');
+            return redirect('/dashboard.user');
         }
 
         // Jika belum login, tampilkan halaman login
@@ -32,11 +32,11 @@ class AuthController extends Controller
         $url = env('SUPABASE_URL') . '/rest/v1/users';
         $key = env('SUPABASE_KEY');
 
-        // 🔹 Ambil data user dari Supabase
+        // 🔹 Ambil data user dari Supabase (pastikan Supabase terhubung)
         $response = Http::withHeaders([
             'apikey' => $key,
             'Authorization' => 'Bearer ' . $key,
-        ])->get($url . '?email=eq.' . $request->email . '&password=eq.' . $request->password);
+        ])->get($url . '?email=eq.' . $request->email);
 
         $user = $response->json();
 
@@ -44,15 +44,20 @@ class AuthController extends Controller
         if (!empty($user)) {
             $data = $user[0];
 
-            // 🧠 Cek apakah user adalah admin (huruf besar / kecil)
-            $isAdmin = $data['isAdmin'] ?? $data['isadmin'] ?? false;
+            // 🔐 Cek password secara manual (jika hash disimpan)
+            if (!password_verify($request->password, $data['password'])) {
+                return back()->with('error', 'Password salah!');
+            }
 
-            if ($isAdmin) {
+            // 🧠 Tentukan role
+            $role = strtolower($data['role'] ?? 'user');
+
+            if ($role === 'admin') {
                 session(['admin' => $data]);
-                return redirect('/dashboard-admin')->with('success', 'Login Admin berhasil!');
+                return redirect('/dashboard.admin')->with('success', 'Login Admin berhasil!');
             } else {
                 session(['user' => $data]);
-                return redirect('/dashboard-user')->with('success', 'Login Pengguna berhasil!');
+                return redirect('/dashboard.user')->with('success', 'Login Pengguna berhasil!');
             }
         }
 
