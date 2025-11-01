@@ -33,11 +33,16 @@
               <td>{{ $user['nama'] ?? '-' }}</td>
               <td>{{ $user['email'] ?? '-' }}</td>
               <td>
-                @if (!empty($user['isAdmin']) && $user['isAdmin'])
-                  <span class="badge bg-primary">Admin</span>
-                @else
-                  <span class="badge bg-secondary">User</span>
-                @endif
+                @php
+                // konversi string "true"/"1"/true jadi boolean asli
+                $isAdmin = filter_var($user['isadmin'] ?? false, FILTER_VALIDATE_BOOLEAN);
+              @endphp
+
+              @if ($isAdmin)
+                <span class="badge bg-primary">Admin</span>
+              @else
+                <span class="badge bg-secondary">User</span>
+              @endif
               </td>
               <td>
                 <a href="{{ route('pengguna.edit', $user['id']) }}" class="btn btn-warning btn-sm">
