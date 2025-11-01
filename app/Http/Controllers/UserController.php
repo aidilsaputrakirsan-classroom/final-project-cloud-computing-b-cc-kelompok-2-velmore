@@ -7,15 +7,37 @@ use Illuminate\Support\Facades\Http;
 
 class UserController extends Controller
 {
-    public function create()
+    // 📋 Daftar pengguna
+    public function index()
     {
         if (!session()->has('admin')) {
             return redirect('/')->with('error', 'Akses ditolak! Anda bukan admin.');
         }
 
+        $url = env('SUPABASE_URL') . '/rest/v1/users';
+        $key = env('SUPABASE_KEY');
+
+        $response = Http::withHeaders([
+            'apikey' => $key,
+            'Authorization' => 'Bearer ' . $key,
+        ])->get($url);
+
+        $users = $response->json() ?? [];
+
+        return view('admin.data-pengguna', compact('users'));
+    }
+
+    // 🧩 Form tambah pengguna
+    public function create()
+    {
+        if (!session()->has('admin')) {
+            return redirect('/')->with('error', 'Akses ditolak!');
+        }
+
         return view('admin.tambah-pengguna');
     }
 
+    // ➕ Simpan pengguna baru
     public function store(Request $request)
     {
         if (!session()->has('admin')) {
@@ -26,133 +48,121 @@ class UserController extends Controller
             'nama' => 'required|string|max:45',
             'email' => 'required|email|max:45',
             'password' => 'required|min:3',
-            'isAdmin' => 'nullable|boolean'
+            'isadmin' => 'nullable|boolean'
         ]);
 
         $url = env('SUPABASE_URL') . '/rest/v1/users';
         $key = env('SUPABASE_KEY');
+
+        $data = [
+            'nama' => $request->nama,
+            'email' => $request->email,
+            'password' => $request->password,
+            'isadmin' => $request->boolean('isadmin'),
+        ];
 
         $response = Http::withHeaders([
             'apikey' => $key,
             'Authorization' => 'Bearer ' . $key,
             'Content-Type' => 'application/json',
             'Prefer' => 'return=representation'
-        ])->post($url, [
-            'nama' => $request->nama,
-            'email' => $request->email,
-            'password' => $request->password,
-            'isAdmin' => $request->boolean('isAdmin'),
+        ])->send('POST', $url, [
+            'body' => json_encode($data)
         ]);
 
         if ($response->successful()) {
             return redirect('/pengguna')->with('success', 'Pengguna baru berhasil ditambahkan!');
-        } else {
-            return back()->with('error', 'Gagal menambahkan pengguna. ' . $response->body());
         }
+
+        return back()->with('error', 'Gagal menambahkan pengguna. ' . $response->body());
     }
-    public function index()
-        {
-            if (!session()->has('admin')) {
-                return redirect('/')->with('error', 'Akses ditolak! Anda bukan admin.');
-            }
 
-            $url = env('SUPABASE_URL') . '/rest/v1/users';
-            $key = env('SUPABASE_KEY');
-
-            $response = \Illuminate\Support\Facades\Http::withHeaders([
-                'apikey' => $key,
-                'Authorization' => 'Bearer ' . $key,
-            ])->get($url);
-
-            $users = $response->json() ?? [];
-
-            return view('admin.data-pengguna', compact('users'));
+    // ✏️ Form edit
+    public function edit($id)
+    {
+        if (!session()->has('admin')) {
+            return redirect('/')->with('error', 'Akses ditolak!');
         }
-    // ✏️ Tampilkan form edit pengguna
-public function edit($id)
-{
-    if (!session()->has('admin')) {
-        return redirect('/')->with('error', 'Akses ditolak!');
+
+        $url = env('SUPABASE_URL') . '/rest/v1/users?id=eq.' . $id;
+        $key = env('SUPABASE_KEY');
+
+        $response = Http::withHeaders([
+            'apikey' => $key,
+            'Authorization' => 'Bearer ' . $key,
+        ])->get($url);
+
+        $user = $response->json()[0] ?? null;
+
+        if (!$user) {
+            return redirect('/pengguna')->with('error', 'Data pengguna tidak ditemukan.');
+        }
+
+        return view('admin.edit-pengguna', compact('user'));
     }
 
-    $url = env('SUPABASE_URL') . '/rest/v1/users?id=eq.' . $id;
-    $key = env('SUPABASE_KEY');
+    // 🔄 Update pengguna
+    public function update(Request $request, $id)
+    {
+        if (!session()->has('admin')) {
+            return redirect('/')->with('error', 'Akses ditolak!');
+        }
 
-    $response = Http::withHeaders([
-        'apikey' => $key,
-        'Authorization' => 'Bearer ' . $key,
-    ])->get($url);
+        $request->validate([
+            'nama' => 'required|string|max:45',
+            'email' => 'required|email|max:45',
+            'password' => 'nullable|min:3',
+            'isadmin' => 'nullable|boolean'
+        ]);
 
-    $user = $response->json()[0] ?? null;
+        $url = env('SUPABASE_URL') . '/rest/v1/users?id=eq.' . $id;
+        $key = env('SUPABASE_KEY');
 
-    if (!$user) {
-        return redirect('/pengguna')->with('error', 'Data pengguna tidak ditemukan.');
-    }
+        $data = [
+            'nama' => $request->nama,
+            'email' => $request->email,
+            'isadmin' => $request->boolean('isadmin'),
+        ];
 
-    return view('admin.edit-pengguna', compact('user'));
-}
+        if ($request->filled('password')) {
+            $data['password'] = $request->password;
+        }
 
-// 🔄 Proses update pengguna
-public function update(Request $request, $id)
-{
-    if (!session()->has('admin')) {
-        return redirect('/')->with('error', 'Akses ditolak!');
-    }
+        $response = Http::withHeaders([
+            'apikey' => $key,
+            'Authorization' => 'Bearer ' . $key,
+            'Content-Type' => 'application/json',
+            'Prefer' => 'return=representation'
+        ])->send('PATCH', $url, [
+            'body' => json_encode($data)
+        ]);
 
-    $request->validate([
-        'nama' => 'required|string|max:45',
-        'email' => 'required|email|max:45',
-        'password' => 'nullable|min:3',
-        'isAdmin' => 'nullable|boolean'
-    ]);
+        if ($response->successful()) {
+            return redirect('/pengguna')->with('success', 'Data pengguna berhasil diperbarui!');
+        }
 
-    $url = env('SUPABASE_URL') . '/rest/v1/users?id=eq.' . $id;
-    $key = env('SUPABASE_KEY');
-
-    $data = [
-        'nama' => $request->nama,
-        'email' => $request->email,
-        'isAdmin' => $request->boolean('isAdmin'),
-    ];
-
-    if ($request->filled('password')) {
-        $data['password'] = $request->password;
-    }
-
-    $response = Http::withHeaders([
-        'apikey' => $key,
-        'Authorization' => 'Bearer ' . $key,
-        'Content-Type' => 'application/json',
-    ])->patch($url, $data);
-
-    if ($response->successful()) {
-        return redirect('/pengguna')->with('success', 'Data pengguna berhasil diperbarui!');
-    } else {
         return back()->with('error', 'Gagal mengupdate data. ' . $response->body());
     }
-}
 
-// 🗑️ Hapus pengguna
-public function destroy($id)
-{
-    if (!session()->has('admin')) {
-        return redirect('/')->with('error', 'Akses ditolak!');
-    }
+    // 🗑️ Hapus pengguna
+    public function destroy($id)
+    {
+        if (!session()->has('admin')) {
+            return redirect('/')->with('error', 'Akses ditolak!');
+        }
 
-    $url = env('SUPABASE_URL') . '/rest/v1/users?id=eq.' . $id;
-    $key = env('SUPABASE_KEY');
+        $url = env('SUPABASE_URL') . '/rest/v1/users?id=eq.' . $id;
+        $key = env('SUPABASE_KEY');
 
-    $response = Http::withHeaders([
-        'apikey' => $key,
-        'Authorization' => 'Bearer ' . $key,
-    ])->delete($url);
+        $response = Http::withHeaders([
+            'apikey' => $key,
+            'Authorization' => 'Bearer ' . $key,
+        ])->delete($url);
 
-    if ($response->successful()) {
-        return redirect('/pengguna')->with('success', 'Pengguna berhasil dihapus!');
-    } else {
+        if ($response->successful()) {
+            return redirect('/pengguna')->with('success', 'Pengguna berhasil dihapus!');
+        }
+
         return back()->with('error', 'Gagal menghapus pengguna. ' . $response->body());
     }
-}
-
-
 }
