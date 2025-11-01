@@ -38,7 +38,7 @@ class UserController extends Controller
     }
 
     // ➕ Simpan pengguna baru
-    public function store(Request $request)
+        public function store(Request $request)
     {
         if (!session()->has('admin')) {
             return redirect('/')->with('error', 'Akses ditolak!');
@@ -54,27 +54,30 @@ class UserController extends Controller
         $url = env('SUPABASE_URL') . '/rest/v1/users';
         $key = env('SUPABASE_KEY');
 
-        $data = [
+        // ✅ pastikan boolean murni
+        $isAdmin = $request->has('isadmin') && $request->input('isadmin') == '1';
+
+        $payload = [
             'nama' => $request->nama,
             'email' => $request->email,
             'password' => $request->password,
-            'isadmin' => $request->boolean('isadmin'),
+            'isadmin' => $isAdmin ? true : false,
         ];
 
         $response = Http::withHeaders([
             'apikey' => $key,
             'Authorization' => 'Bearer ' . $key,
             'Content-Type' => 'application/json',
-            'Prefer' => 'return=representation'
+            'Prefer' => 'return=representation',
         ])->send('POST', $url, [
-            'body' => json_encode($data)
+            'body' => json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
         ]);
 
         if ($response->successful()) {
             return redirect('/pengguna')->with('success', 'Pengguna baru berhasil ditambahkan!');
+        } else {
+            return back()->with('error', 'Gagal menambahkan pengguna. ' . $response->body());
         }
-
-        return back()->with('error', 'Gagal menambahkan pengguna. ' . $response->body());
     }
 
     // ✏️ Form edit
