@@ -7,9 +7,10 @@ use Illuminate\Support\Facades\Http;
 
 class AuthController extends Controller
 {
+    // 🧩 Tampilkan halaman login
     public function showLogin()
     {
-        // Kalau sudah login, arahkan ke dashboard sesuai role
+        // Kalau sudah login, arahkan sesuai role
         if (session()->has('admin')) {
             return redirect('/dashboard-admin');
         }
@@ -22,6 +23,7 @@ class AuthController extends Controller
         return view('auth.login');
     }
 
+    // 🧩 Proses login
     public function login(Request $request)
     {
         $request->validate([
@@ -32,21 +34,23 @@ class AuthController extends Controller
         $url = env('SUPABASE_URL') . '/rest/v1/users';
         $key = env('SUPABASE_KEY');
 
-        // 🔹 Ambil data user dari Supabase
+        // 🔹 Ambil data user dari Supabase berdasarkan email & password
         $response = Http::withHeaders([
             'apikey' => $key,
             'Authorization' => 'Bearer ' . $key,
         ])->get($url . '?email=eq.' . $request->email . '&password=eq.' . $request->password);
 
+        // Ambil hasil JSON
         $user = $response->json();
 
         // 🔹 Cek apakah user ditemukan
-        if (!empty($user)) {
+        if (!empty($user) && isset($user[0])) {
             $data = $user[0];
 
-            // 🧠 Cek apakah user adalah admin (huruf besar / kecil)
-            $isAdmin = $data['isAdmin'] ?? $data['isadmin'] ?? false;
+            // 🔹 Ambil status admin dari kolom 'isadmin'
+            $isAdmin = isset($data['isadmin']) ? (bool)$data['isadmin'] : false;
 
+            // 🧠 Cek role pengguna
             if ($isAdmin) {
                 session(['admin' => $data]);
                 return redirect('/dashboard-admin')->with('success', 'Login Admin berhasil!');
@@ -60,6 +64,7 @@ class AuthController extends Controller
         return back()->with('error', 'Email atau password salah!');
     }
 
+    // 🧩 Logout
     public function logout()
     {
         session()->forget(['admin', 'user']);

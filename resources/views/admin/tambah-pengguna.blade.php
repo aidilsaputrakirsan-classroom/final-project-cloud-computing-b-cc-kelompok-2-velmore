@@ -39,8 +39,8 @@
       </div>
 
       <div class="form-check mb-3">
-        <input type="checkbox" name="isAdmin" class="form-check-input" id="isAdmin">
-        <label class="form-check-label" for="isAdmin">Jadikan Admin</label>
+        <input type="checkbox" name="isadmin" class="form-check-input" id="isadmin">
+        <label class="form-check-label" for="isadmin">Jadikan Admin</label>
       </div>
 
       <button type="submit" class="btn btn-gradient">

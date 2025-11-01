@@ -36,9 +36,9 @@
       </div>
 
       <div class="form-check mb-3">
-        <input type="checkbox" name="isAdmin" class="form-check-input" id="isAdmin"
-               {{ !empty($user['isAdmin']) && $user['isAdmin'] ? 'checked' : '' }}>
-        <label class="form-check-label" for="isAdmin">Jadikan Admin</label>
+        <input type="checkbox" name="isadmin" class="form-check-input" id="isadmin" value="1"
+              {{ !empty($user['isadmin']) && filter_var($user['isadmin'], FILTER_VALIDATE_BOOLEAN) ? 'checked' : '' }}>
+        <label class="form-check-label" for="isadmin">Jadikan Admin</label>
       </div>
 
       <div class="d-flex gap-2 mt-4">
