@@ -39,7 +39,7 @@
       </div>
 
       <div class="form-check mb-3">
-        <input type="checkbox" name="isadmin" class="form-check-input" id="isadmin">
+        <input type="checkbox" name="isadmin" id="isadmin" class="form-check-input" value="1">
         <label class="form-check-label" for="isadmin">Jadikan Admin</label>
       </div>
 
