@@ -33,7 +33,7 @@
               <td>{{ $user['nama'] ?? '-' }}</td>
               <td>{{ $user['email'] ?? '-' }}</td>
               <td>
-                @if (!empty($user['isAdmin']) && $user['isAdmin'])
+                @if (!empty($user['isadmin']) && $user['isadmin'])
                   <span class="badge bg-primary">Admin</span>
                 @else
                   <span class="badge bg-secondary">User</span>
