@@ -26,7 +26,7 @@ class UserController extends Controller
             'nama' => 'required|string|max:45',
             'email' => 'required|email|max:45',
             'password' => 'required|min:3',
-            'isAdmin' => 'nullable|boolean'
+            'isadmin' => 'nullable|boolean'
         ]);
 
         $url = env('SUPABASE_URL') . '/rest/v1/users';
@@ -41,7 +41,7 @@ class UserController extends Controller
             'nama' => $request->nama,
             'email' => $request->email,
             'password' => $request->password,
-            'isAdmin' => $request->boolean('isAdmin'),
+            'isadmin' => $request->boolean('isadmin'),
         ]);
 
         if ($response->successful()) {
@@ -103,7 +103,7 @@ public function update(Request $request, $id)
         'nama' => 'required|string|max:45',
         'email' => 'required|email|max:45',
         'password' => 'nullable|min:3',
-        'isAdmin' => 'nullable|boolean'
+        'isadmin' => 'nullable|boolean'
     ]);
 
     $url = env('SUPABASE_URL') . '/rest/v1/users?id=eq.' . $id;
@@ -112,7 +112,7 @@ public function update(Request $request, $id)
     $data = [
         'nama' => $request->nama,
         'email' => $request->email,
-        'isAdmin' => $request->boolean('isAdmin'),
+        'isadmin' => $request->boolean('isadmin'),
     ];
 
     if ($request->filled('password')) {
