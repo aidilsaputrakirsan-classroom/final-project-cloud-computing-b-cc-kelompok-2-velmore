@@ -7,23 +7,21 @@ use Illuminate\Support\Facades\Http;
 
 class AuthController extends Controller
 {
-    // 🧩 Tampilkan halaman login
     public function showLogin()
     {
-        // Kalau sudah login, arahkan sesuai role
+        // Kalau sudah login, arahkan ke dashboard sesuai role
         if (session()->has('admin')) {
-            return redirect('/dashboard-admin');
+            return redirect('/dashboard.admin');
         }
 
         if (session()->has('user')) {
-            return redirect('/dashboard-user');
+            return redirect('/dashboard.user');
         }
 
         // Jika belum login, tampilkan halaman login
         return view('auth.login');
     }
 
-    // 🧩 Proses login
     public function login(Request $request)
     {
         $request->validate([
@@ -34,29 +32,32 @@ class AuthController extends Controller
         $url = env('SUPABASE_URL') . '/rest/v1/users';
         $key = env('SUPABASE_KEY');
 
-        // 🔹 Ambil data user dari Supabase berdasarkan email & password
+        // 🔹 Ambil data user dari Supabase (pastikan Supabase terhubung)
         $response = Http::withHeaders([
             'apikey' => $key,
             'Authorization' => 'Bearer ' . $key,
-        ])->get($url . '?email=eq.' . $request->email . '&password=eq.' . $request->password);
+        ])->get($url . '?email=eq.' . $request->email);
 
-        // Ambil hasil JSON
         $user = $response->json();
 
         // 🔹 Cek apakah user ditemukan
-        if (!empty($user) && isset($user[0])) {
+        if (!empty($user)) {
             $data = $user[0];
 
-            // 🔹 Ambil status admin dari kolom 'isadmin'
-            $isAdmin = isset($data['isadmin']) ? (bool)$data['isadmin'] : false;
+            // 🔐 Cek password secara manual (jika hash disimpan)
+            if (!password_verify($request->password, $data['password'])) {
+                return back()->with('error', 'Password salah!');
+            }
 
-            // 🧠 Cek role pengguna
-            if ($isAdmin) {
+            // 🧠 Tentukan role
+            $role = strtolower($data['role'] ?? 'user');
+
+            if ($role === 'admin') {
                 session(['admin' => $data]);
-                return redirect('/dashboard-admin')->with('success', 'Login Admin berhasil!');
+                return redirect('/dashboard.admin')->with('success', 'Login Admin berhasil!');
             } else {
                 session(['user' => $data]);
-                return redirect('/dashboard-user')->with('success', 'Login Pengguna berhasil!');
+                return redirect('/dashboard.user')->with('success', 'Login Pengguna berhasil!');
             }
         }
 
@@ -64,7 +65,6 @@ class AuthController extends Controller
         return back()->with('error', 'Email atau password salah!');
     }
 
-    // 🧩 Logout
     public function logout()
     {
         session()->forget(['admin', 'user']);
