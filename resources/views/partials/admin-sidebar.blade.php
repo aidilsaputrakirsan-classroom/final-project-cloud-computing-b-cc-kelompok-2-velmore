@@ -29,8 +29,4 @@
   <a href="/pengembalian" class="{{ request()->is('pengembalian') ? 'active' : '' }}">
     <i class="fa fa-undo"></i> <span>Pengembalian</span>
   </a>
-
-  <a href="/riwayat" class="{{ request()->is('riwayat') ? 'active' : '' }}">
-    <i class="fa fa-history"></i> <span>Riwayat</span>
-  </a>
 </div>

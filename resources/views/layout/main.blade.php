@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+  <meta name="csrf-token" content="{{ csrf_token() }}">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>@yield('title') - VERLY Library</title>
@@ -21,7 +22,7 @@
       --success: #10b981;
       --danger: #ef4444;
     }
-    
+
     body {
       font-family: 'Poppins', sans-serif;
       min-height: 100vh;
@@ -41,7 +42,7 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background: 
+      background:
         radial-gradient(circle at 20% 30%, rgba(255,255,255,0.1) 0%, transparent 50%),
         radial-gradient(circle at 80% 70%, rgba(255,255,255,0.08) 0%, transparent 50%);
       pointer-events: none;
@@ -60,13 +61,13 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background: 
+      background:
         radial-gradient(circle at 20% 30%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
         radial-gradient(circle at 80% 70%, rgba(139, 92, 246, 0.08) 0%, transparent 50%);
       pointer-events: none;
       z-index: 0;
     }
-    
+
     .sidebar {
       height: 100vh;
       width: 280px;
@@ -129,7 +130,7 @@
     .sidebar.collapsed .sidebar-toggle i {
       transform: rotate(180deg);
     }
-    
+
     .sidebar-header {
       padding: 28px 24px;
       display: flex;
@@ -152,7 +153,7 @@
     .dark-mode .sidebar-header {
       border-bottom-color: rgba(255, 255, 255, 0.08);
     }
-    
+
     .logo-icon {
       width: 48px;
       height: 48px;
@@ -182,7 +183,7 @@
       opacity: 0;
       width: 0;
     }
-    
+
     .logo-text h4 {
       font-size: 22px;
       font-weight: 700;
@@ -192,7 +193,7 @@
       -webkit-text-fill-color: transparent;
       background-clip: text;
     }
-    
+
     .logo-text p {
       font-size: 12px;
       margin: 2px 0 0 0;
@@ -206,22 +207,22 @@
     .dark-mode .logo-text p {
       color: #94a3b8;
     }
-    
+
     .sidebar-menu {
       flex: 1;
       padding: 24px 0;
       overflow-y: auto;
       overflow-x: hidden;
     }
-    
+
     .sidebar-menu::-webkit-scrollbar {
       width: 5px;
     }
-    
+
     .sidebar-menu::-webkit-scrollbar-track {
       background: transparent;
     }
-    
+
     .sidebar-menu::-webkit-scrollbar-thumb {
       background: rgba(99, 102, 241, 0.3);
       border-radius: 10px;
@@ -230,11 +231,11 @@
     .sidebar-menu::-webkit-scrollbar-thumb:hover {
       background: rgba(99, 102, 241, 0.5);
     }
-    
+
     .menu-section {
       margin-bottom: 28px;
     }
-    
+
     .menu-section-title {
       padding: 0 24px 10px;
       font-size: 11px;
@@ -261,7 +262,7 @@
     .dark-mode .menu-section-title {
       color: #94a3b8;
     }
-    
+
     .sidebar a {
       padding: 13px 24px;
       display: flex;
@@ -289,7 +290,7 @@
     .dark-mode .sidebar a {
       color: #e2e8f0;
     }
-    
+
     .sidebar a i {
       width: 22px;
       margin-right: 14px;
@@ -320,7 +321,7 @@
       opacity: 0;
       width: 0;
     }
-    
+
     .sidebar a:hover {
       transform: translateX(5px);
     }
@@ -338,23 +339,23 @@
       background: rgba(99, 102, 241, 0.15);
       color: #a5b4fc;
     }
-    
+
     .sidebar a:hover i {
       transform: scale(1.15);
       color: var(--primary);
     }
-    
+
     .sidebar a.active {
       background: linear-gradient(135deg, var(--primary), var(--secondary));
       color: white;
       box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
     }
-    
+
     .sidebar a.active i {
       color: white;
       transform: scale(1.1);
     }
-    
+
     .logout-section {
       padding: 20px;
       border-top: 1px solid;
@@ -371,7 +372,7 @@
     .dark-mode .logout-section {
       border-top-color: rgba(255, 255, 255, 0.08);
     }
-    
+
     .logout {
       background: linear-gradient(135deg, #ef4444, #dc2626);
       color: white;
@@ -391,7 +392,7 @@
     .sidebar.collapsed .logout {
       padding: 13px;
     }
-    
+
     .logout i {
       margin-right: 10px;
       transition: transform 0.3s ease;
@@ -411,7 +412,7 @@
       width: 0;
       overflow: hidden;
     }
-    
+
     .logout:hover {
       transform: translateY(-3px);
       box-shadow: 0 10px 25px rgba(239, 68, 68, 0.4);
@@ -424,7 +425,7 @@
     .logout:hover i {
       transform: rotate(-10deg);
     }
-    
+
     .theme-toggle {
       position: fixed;
       bottom: 28px;
@@ -453,17 +454,17 @@
       background: rgba(30, 41, 59, 0.9);
       color: #fbbf24;
     }
-    
+
     .theme-toggle:hover {
       transform: translateY(-5px) rotate(15deg);
       box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
     }
-    
+
     .theme-toggle i {
       font-size: 24px;
       transition: all 0.3s ease;
     }
-    
+
     .content {
       margin-left: 280px;
       padding: 36px;
@@ -476,7 +477,7 @@
     .sidebar.collapsed + .content {
       margin-left: 80px;
     }
-    
+
     .content-header {
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
@@ -498,7 +499,7 @@
       border-color: rgba(255, 255, 255, 0.05);
       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
     }
-    
+
     .content-body {
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
@@ -520,7 +521,7 @@
       border-color: rgba(255, 255, 255, 0.05);
       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
     }
-    
+
     .card {
       border-radius: 16px;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -538,7 +539,7 @@
       border-color: rgba(255, 255, 255, 0.08);
       color: #f1f5f9;
     }
-    
+
     .card:hover {
       transform: translateY(-5px);
     }
@@ -632,7 +633,7 @@
       transform: translateY(-2px);
       box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
     }
-    
+
     @media (max-width: 768px) {
       .sidebar {
         transform: translateX(-100%);
@@ -642,11 +643,11 @@
         transform: translateX(-100%);
         width: 280px;
       }
-      
+
       .sidebar.show {
         transform: translateX(0);
       }
-      
+
       .content {
         margin-left: 0;
         padding: 24px 16px;
@@ -655,7 +656,7 @@
       .sidebar.collapsed + .content {
         margin-left: 0;
       }
-      
+
       .mobile-overlay {
         display: none;
         position: fixed;
@@ -667,11 +668,11 @@
         z-index: 999;
         backdrop-filter: blur(4px);
       }
-      
+
       .mobile-overlay.show {
         display: block;
       }
-      
+
       .mobile-toggle {
         position: fixed;
         top: 20px;
@@ -703,7 +704,7 @@
       .mobile-toggle:hover {
         transform: translateY(-2px);
       }
-      
+
       .mobile-toggle i {
         font-size: 20px;
       }
@@ -723,7 +724,7 @@
         display: none;
       }
     }
-    
+
     @media (min-width: 769px) {
       .mobile-toggle,
       .mobile-overlay {
@@ -740,12 +741,12 @@
 
   <!-- Mobile Overlay -->
   <div class="mobile-overlay" onclick="toggleMobileSidebar()"></div>
-  
+
   <!-- Theme Toggle Button -->
   <div class="theme-toggle" onclick="toggleTheme()">
     <i class="fas fa-moon" id="theme-icon"></i>
   </div>
-  
+
   <div class="sidebar" id="sidebar">
     <!-- Sidebar Toggle Button -->
     <button class="sidebar-toggle" onclick="toggleSidebar()">
@@ -761,11 +762,11 @@
         <p>Library System</p>
       </div>
     </div>
-    
+
     <div class="sidebar-menu">
       @yield('sidebar')
     </div>
-    
+
     <div class="logout-section">
       <a href="/logout" class="logout">
         <i class="fas fa-sign-out-alt"></i>
@@ -773,11 +774,11 @@
       </a>
     </div>
   </div>
-  
+
   <div class="content">
     @yield('content')
   </div>
-  
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // Toggle Sidebar
@@ -794,12 +795,12 @@
       sidebar.classList.toggle('show');
       overlay.classList.toggle('show');
     }
-    
+
     // Toggle Theme
     function toggleTheme() {
       const body = document.body;
       const icon = document.getElementById('theme-icon');
-      
+
       if (body.classList.contains('light-mode')) {
         body.classList.remove('light-mode');
         body.classList.add('dark-mode');
@@ -812,7 +813,7 @@
         localStorage.setItem('verlyTheme', 'light');
       }
     }
-    
+
     // Restore states on page load
     window.addEventListener('DOMContentLoaded', () => {
       const savedTheme = localStorage.getItem('verlyTheme') || 'light';
@@ -820,7 +821,7 @@
       const body = document.body;
       const icon = document.getElementById('theme-icon');
       const sidebar = document.getElementById('sidebar');
-      
+
       // Restore theme
       body.className = savedTheme + '-mode';
       icon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
