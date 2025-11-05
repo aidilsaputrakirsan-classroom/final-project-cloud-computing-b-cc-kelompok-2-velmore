@@ -399,7 +399,7 @@
       .login-card {
         padding: 30px 25px;
       }
-      
+
       .theme-toggle {
         top: 20px;
         right: 20px;
@@ -420,10 +420,10 @@
       <div class="library-icon">
         <i class="fas fa-book-open"></i>
       </div>
-      
+
       <h3 class="login-title">VERLY Library</h3>
       <p class="login-subtitle">Sistem Manajemen Perpustakaan Digital</p>
-      
+
       @if(session('error'))
         <div class="alert alert-danger">
           <i class="fas fa-exclamation-circle"></i> {{ session('error') }}
@@ -435,10 +435,10 @@
           <i class="fas fa-check-circle"></i> {{ session('success') }}
         </div>
       @endif
-      
+
       <form method="POST" action="/login">
         @csrf
-        
+
         <div class="input-group-custom">
           <label class="form-label">
             <i class="fas fa-envelope"></i> Email
@@ -460,7 +460,7 @@
           <span><i class="fas fa-sign-in-alt"></i> Masuk ke Dashboard</span>
         </button>
       </form>
-      
+
       <div class="decorative-books">
         <div class="book"></div>
         <div class="book"></div>
@@ -477,7 +477,7 @@
       const savedTheme = localStorage.getItem('theme') || 'light-mode';
       const body = document.body;
       const icon = document.getElementById('theme-icon');
-      
+
       body.className = savedTheme;
       icon.className = savedTheme === 'dark-mode' ? 'fas fa-sun' : 'fas fa-moon';
     });
@@ -486,7 +486,7 @@
     function toggleTheme() {
       const body = document.body;
       const icon = document.getElementById('theme-icon');
-      
+
       if (body.classList.contains('light-mode')) {
         body.classList.remove('light-mode');
         body.classList.add('dark-mode');
@@ -504,7 +504,7 @@
     function togglePasswordVisibility() {
       const passwordInput = document.getElementById('password');
       const toggleIcon = document.getElementById('togglePassword');
-      
+
       if (passwordInput.type === 'password') {
         passwordInput.type = 'text';
         toggleIcon.className = 'fas fa-eye-slash password-toggle';
@@ -519,7 +519,7 @@
       let ripple = document.createElement('span');
       ripple.classList.add('ripple');
       this.appendChild(ripple);
-      
+
       setTimeout(() => ripple.remove(), 600);
     });
   </script>
