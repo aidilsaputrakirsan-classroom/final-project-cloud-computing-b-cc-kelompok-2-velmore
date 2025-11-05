@@ -20,7 +20,7 @@ class BukuController extends Controller
     }
 
     /**
-     * 🔹 Daftar Buku dengan filter
+     * 🔹 Tampilkan daftar buku (dengan filter & pagination)
      */
     public function index(Request $request)
     {
@@ -28,23 +28,16 @@ class BukuController extends Controller
             return redirect('/')->with('error', 'Akses ditolak! Anda bukan admin.');
         }
 
-        $judul = $request->query('judul');
-        $kode_buku = $request->query('kode_buku');
-        $pengarang = $request->query('pengarang');
-        $status = $request->query('status');
-
-        // Build query Supabase
+        // Filter pencarian
         $filters = [];
-        if ($judul) $filters[] = "judul=ilike.%$judul%";
-        if ($kode_buku) $filters[] = "kode_buku=ilike.%$kode_buku%";
-        if ($pengarang) $filters[] = "pengarang=ilike.%$pengarang%";
-        if ($status) $filters[] = "status=eq.$status";
+        if ($request->filled('judul')) $filters[] = "judul=ilike.%{$request->judul}%";
+        if ($request->filled('kode_buku')) $filters[] = "kode_buku=ilike.%{$request->kode_buku}%";
+        if ($request->filled('pengarang')) $filters[] = "pengarang=ilike.%{$request->pengarang}%";
+        if ($request->filled('status')) $filters[] = "status=eq.{$request->status}";
 
-        $queryString = '';
-        if (!empty($filters)) {
-            $queryString = '?' . implode('&', $filters);
-        }
+        $queryString = !empty($filters) ? '?' . implode('&', $filters) : '';
 
+        // Ambil data dari Supabase
         $response = Http::withHeaders([
             'apikey' => $this->supabaseKey,
             'Authorization' => 'Bearer ' . $this->supabaseKey,
@@ -70,7 +63,7 @@ class BukuController extends Controller
     }
 
     /**
-     * 🔹 Form Tambah Buku
+     * 🔹 Form tambah buku baru
      */
     public function create()
     {
@@ -89,7 +82,7 @@ class BukuController extends Controller
     }
 
     /**
-     * 🔹 Simpan Buku Baru
+     * 🔹 Simpan buku ke Supabase
      */
     public function store(Request $request)
     {
@@ -98,15 +91,16 @@ class BukuController extends Controller
         }
 
         $request->validate([
-            'judul' => 'required',
-            'kode_buku' => 'required',
-            'pengarang' => 'required',
-            'penerbit' => 'required',
-            'tahun_terbit' => 'required',
-            'deskripsi' => 'required',
+            'judul' => 'required|string|max:255',
+            'kode_buku' => 'required|string|max:50',
+            'pengarang' => 'required|string|max:255',
+            'penerbit' => 'required|string|max:255',
+            'tahun_terbit' => 'required|numeric',
+            'deskripsi' => 'required|string',
             'gambar' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
+        // Upload gambar ke public/img/buku
         $namaGambar = null;
         if ($request->hasFile('gambar')) {
             $file = $request->file('gambar');
@@ -114,6 +108,7 @@ class BukuController extends Controller
             $file->move(public_path('img/buku'), $namaGambar);
         }
 
+        // Data buku yang akan dikirim ke Supabase
         $data = [
             'judul' => $request->judul,
             'kode_buku' => $request->kode_buku,
@@ -128,19 +123,20 @@ class BukuController extends Controller
             'apikey' => $this->supabaseKey,
             'Authorization' => 'Bearer ' . $this->supabaseKey,
             'Content-Type' => 'application/json',
-            'Prefer' => 'return=representation'
+            'Prefer' => 'return=representation',
         ])->post($this->supabaseUrl, $data);
 
         if ($response->successful()) {
             Alert::success('Berhasil', 'Data buku berhasil ditambahkan!');
-            return redirect('/buku');
+            return redirect()->route('buku.index');
         }
 
-        return back()->with('error', 'Gagal menambahkan buku. ' . $response->body());
+        Alert::error('Gagal', 'Terjadi kesalahan saat menambahkan buku!');
+        return back()->with('error', $response->body());
     }
 
     /**
-     * 🔹 Form Edit Buku
+     * 🔹 Form edit buku
      */
     public function edit($id)
     {
@@ -157,6 +153,7 @@ class BukuController extends Controller
         if (!$bukuResponse->successful() || empty($data)) {
             abort(404, 'Buku tidak ditemukan');
         }
+
         $buku = (object) $data[0];
 
         $kategoriResponse = Http::withHeaders([
@@ -170,7 +167,7 @@ class BukuController extends Controller
     }
 
     /**
-     * 🔹 Update Buku
+     * 🔹 Update data buku
      */
     public function update(Request $request, $id)
     {
@@ -179,15 +176,16 @@ class BukuController extends Controller
         }
 
         $request->validate([
-            'judul' => 'required',
-            'kode_buku' => 'required',
-            'pengarang' => 'required',
-            'penerbit' => 'required',
-            'tahun_terbit' => 'required',
-            'deskripsi' => 'required',
+            'judul' => 'required|string|max:255',
+            'kode_buku' => 'required|string|max:50',
+            'pengarang' => 'required|string|max:255',
+            'penerbit' => 'required|string|max:255',
+            'tahun_terbit' => 'required|numeric',
+            'deskripsi' => 'required|string',
             'gambar' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
+        // Ambil data lama dari Supabase
         $oldDataResponse = Http::withHeaders([
             'apikey' => $this->supabaseKey,
             'Authorization' => 'Bearer ' . $this->supabaseKey,
@@ -196,6 +194,7 @@ class BukuController extends Controller
         $oldData = $oldDataResponse->json();
         $namaGambar = $oldData[0]['gambar'] ?? null;
 
+        // Ganti gambar jika ada upload baru
         if ($request->hasFile('gambar')) {
             if ($namaGambar && file_exists(public_path('img/buku/' . $namaGambar))) {
                 unlink(public_path('img/buku/' . $namaGambar));
@@ -206,6 +205,7 @@ class BukuController extends Controller
             $file->move(public_path('img/buku'), $namaGambar);
         }
 
+        // Kirim update ke Supabase
         $data = [
             'judul' => $request->judul,
             'kode_buku' => $request->kode_buku,
@@ -219,19 +219,20 @@ class BukuController extends Controller
         $response = Http::withHeaders([
             'apikey' => $this->supabaseKey,
             'Authorization' => 'Bearer ' . $this->supabaseKey,
-            'Content-Type' => 'application/json'
+            'Content-Type' => 'application/json',
         ])->patch($this->supabaseUrl . '?id=eq.' . $id, $data);
 
         if ($response->successful()) {
             Alert::success('Berhasil', 'Data buku berhasil diperbarui!');
-            return redirect('/buku');
+            return redirect()->route('buku.index');
         }
 
-        return back()->with('error', 'Gagal memperbarui buku. ' . $response->body());
+        Alert::error('Gagal', 'Terjadi kesalahan saat memperbarui buku!');
+        return back()->with('error', $response->body());
     }
 
     /**
-     * 🔹 Hapus Buku
+     * 🔹 Hapus buku
      */
     public function destroy($id)
     {
@@ -246,11 +247,13 @@ class BukuController extends Controller
 
         $buku = $getResponse->json();
         if (empty($buku)) {
-            return redirect()->route('buku.index')->with('error', 'Data buku tidak ditemukan.');
+            Alert::error('Gagal', 'Data buku tidak ditemukan.');
+            return redirect()->route('buku.index');
         }
 
         $namaGambar = $buku[0]['gambar'] ?? null;
 
+        // Hapus dari Supabase
         $deleteResponse = Http::withHeaders([
             'apikey' => $this->supabaseKey,
             'Authorization' => 'Bearer ' . $this->supabaseKey,
@@ -265,11 +268,12 @@ class BukuController extends Controller
             return redirect()->route('buku.index');
         }
 
-        return redirect()->route('buku.index')->with('error', 'Gagal menghapus buku. ' . $deleteResponse->body());
+        Alert::error('Gagal', 'Terjadi kesalahan saat menghapus buku!');
+        return redirect()->route('buku.index')->with('error', $deleteResponse->body());
     }
 
     /**
-     * 🔹 Detail Buku
+     * 🔹 Detail buku
      */
     public function show($id)
     {
@@ -284,7 +288,28 @@ class BukuController extends Controller
         }
 
         $buku = (object) $data[0];
-
         return view('buku.detail', compact('buku'));
     }
+    public function userDashboard()
+{
+    $supabaseUrl = env('SUPABASE_URL') . '/rest/v1';
+    $supabaseKey = env('SUPABASE_KEY');
+    $idUser = session('user')['id'] ?? null;
+
+    if (!$idUser) {
+        return '⚠️ Session user kosong!';
+    }
+
+    $response = Http::withHeaders([
+        'apikey' => $supabaseKey,
+        'Authorization' => "Bearer $supabaseKey",
+    ])->get("$supabaseUrl/peminjaman?select=*,buku(*)&id_pengguna=eq.$idUser");
+
+    // 🧠 Debug dulu
+    dd([
+        'status' => $response->status(),
+        'body' => $response->json(),
+        'id_user_session' => $idUser
+    ]);
+}
 }
