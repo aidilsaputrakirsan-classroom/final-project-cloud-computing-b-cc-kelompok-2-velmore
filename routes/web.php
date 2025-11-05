@@ -8,56 +8,77 @@ use App\Http\Controllers\PeminjamanController;
 use App\Http\Controllers\PengembalianController;
 use App\Http\Controllers\DashboardAdminController;
 
-
-// =====================================================
-// 🔐 AUTENTIKASI
-// =====================================================
+/*
+|--------------------------------------------------------------------------
+| 🔐 AUTENTIKASI
+|--------------------------------------------------------------------------
+*/
 Route::get('/', [AuthController::class, 'showLogin'])->name('login');
 Route::get('/login', [AuthController::class, 'showLogin']);
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
 
+/*
+|--------------------------------------------------------------------------
+| 📊 DASHBOARD
+|--------------------------------------------------------------------------
+*/
 Route::get('/dashboard-admin', [DashboardAdminController::class, 'index'])
     ->name('dashboard.admin');
 
-Route::get('/dashboard-user', [PeminjamanController::class, 'dashboard'])->name('dashboard.user');
+Route::get('/dashboard-user', [PeminjamanController::class, 'dashboard'])
+    ->name('dashboard.user');
 
-// =====================================================
-// 👥 MANAJEMEN PENGGUNA (ADMIN)
-// =====================================================
-Route::get('/pengguna', [UserController::class, 'index'])->name('pengguna.index');
-Route::get('/pengguna/tambah', [UserController::class, 'create'])->name('pengguna.tambah');
-Route::post('/pengguna', [UserController::class, 'store'])->name('pengguna.store');
-Route::get('/pengguna/{id}/edit', [UserController::class, 'edit'])->name('pengguna.edit');
-Route::post('/pengguna/{id}/update', [UserController::class, 'update'])->name('pengguna.update');
-Route::delete('/pengguna/{id}', [UserController::class, 'destroy'])->name('pengguna.destroy');
+/*
+|--------------------------------------------------------------------------
+| 👥 MANAJEMEN PENGGUNA (ADMIN)
+|--------------------------------------------------------------------------
+*/
+Route::prefix('pengguna')->name('pengguna.')->group(function () {
+    Route::get('/', [UserController::class, 'index'])->name('index');
+    Route::get('/tambah', [UserController::class, 'create'])->name('tambah');
+    Route::post('/', [UserController::class, 'store'])->name('store');
+    Route::get('/{id}/edit', [UserController::class, 'edit'])->name('edit');
+    Route::post('/{id}/update', [UserController::class, 'update'])->name('update');
+    Route::delete('/{id}', [UserController::class, 'destroy'])->name('destroy');
+});
 
-// =====================================================
-// 📚 MANAJEMEN BUKU
-// =====================================================
-Route::get('/buku', [BukuController::class, 'index'])->name('buku.index');
-Route::get('/buku/tambah', [BukuController::class, 'create'])->name('buku.tambah');
-Route::post('/buku', [BukuController::class, 'store'])->name('buku.store');
-Route::get('/buku/{id}/edit', [BukuController::class, 'edit'])->name('buku.edit');
-Route::put('/buku/{id}', [BukuController::class, 'update'])->name('buku.update');
-Route::delete('/buku/{id}', [BukuController::class, 'destroy'])->name('buku.destroy');
-Route::get('/buku/{id}', [BukuController::class, 'show'])->name('buku.show');
+/*
+|--------------------------------------------------------------------------
+| 📚 MANAJEMEN BUKU
+|--------------------------------------------------------------------------
+*/
+Route::prefix('buku')->name('buku.')->group(function () {
+    Route::get('/', [BukuController::class, 'index'])->name('index');
+    Route::get('/tambah', [BukuController::class, 'create'])->name('tambah');
+    Route::post('/', [BukuController::class, 'store'])->name('store');
+    Route::get('/{id}/edit', [BukuController::class, 'edit'])->name('edit');
+    Route::put('/{id}', [BukuController::class, 'update'])->name('update');
+    Route::delete('/{id}', [BukuController::class, 'destroy'])->name('destroy');
+    Route::get('/{id}', [BukuController::class, 'show'])->name('show');
+});
 
-// =====================================================
-// 📖 PEMINJAMAN (USER)
-// =====================================================
+/*
+|--------------------------------------------------------------------------
+| 📖 PEMINJAMAN & PENGEMBALIAN
+|--------------------------------------------------------------------------
+*/
+// User
 Route::get('/peminjaman', [PeminjamanController::class, 'index'])->name('peminjaman.index');
 Route::get('/peminjaman/create/{id_buku}', [PeminjamanController::class, 'create'])->name('peminjaman.create');
 Route::get('/peminjaman/{id}/edit', [PeminjamanController::class, 'edit'])->name('peminjaman.edit');
 Route::put('/peminjaman/{id}', [PeminjamanController::class, 'update'])->name('peminjaman.update');
-Route::post('/pengembalian/simpan', [PengembalianController::class, 'simpan']);
 
-Route::get('/peminjaman', [PeminjamanController::class, 'adminIndex'])
-    ->name('admin.peminjaman');
-Route::get('/pengembalian', [PeminjamanController::class, 'adminPengembalian'])->name('admin.pengembalian');
-// =====================================================
-// 🧪 DEBUG
-// =====================================================
+// Admin
+Route::get('/admin/peminjaman', [PeminjamanController::class, 'adminIndex'])->name('admin.peminjaman');
+Route::get('/admin/pengembalian', [PeminjamanController::class, 'adminPengembalian'])->name('admin.pengembalian');
+Route::post('/pengembalian/simpan', [PengembalianController::class, 'simpan'])->name('pengembalian.simpan');
+
+/*
+|--------------------------------------------------------------------------
+| 🧪 DEBUG (SUPABASE CONNECTION)
+|--------------------------------------------------------------------------
+*/
 Route::get('/debug/supabase', function () {
     $url = env('SUPABASE_URL');
     $key = env('SUPABASE_KEY');
