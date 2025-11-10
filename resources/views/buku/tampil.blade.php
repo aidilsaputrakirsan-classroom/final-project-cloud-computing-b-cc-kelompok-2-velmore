@@ -1,268 +1,509 @@
 @extends('layout.main')
 
-@section('title', 'Dashboard Admin')
-
 @section('sidebar')
-  @include('partials.admin-sidebar')
+    @include('partials.admin-sidebar')
+@endsection
+
+@section('judul')
+    <h1 class="page-title mb-4">
+        Perpustakaan Digital
+    </h1>
 @endsection
 
 @section('content')
-<div class="content-header mb-4">
-  <h2 class="dashboard-title fw-bold">
-    Selamat Datang, {{ session('admin')['nama'] ?? 'Admin' }} 👋
-  </h2>
-  <p class="dashboard-desc">Kelola seluruh data perpustakaan dan pantau aktivitas terbaru di sini.</p>
-</div>
-
-<div class="row g-4 mb-4">
-  <div class="col-md-3 col-sm-6">
-    <div class="card dashboard-card p-4 shadow-sm">
-      <h6 class="fw-bold mb-2"><i class="fa fa-users text-primary me-2"></i> Total Pengguna</h6>
-      <h3 class="fw-bold">{{ $totalPengguna ?? 0 }}</h3>
-      <p class="text-secondary small mb-0">Jumlah akun terdaftar</p>
-    </div>
-  </div>
-
-  <div class="col-md-3 col-sm-6">
-    <div class="card dashboard-card p-4 shadow-sm">
-      <h6 class="fw-bold mb-2"><i class="fa fa-book text-success me-2"></i> Total Buku</h6>
-      <h3 class="fw-bold">{{ $totalBuku ?? 0 }}</h3>
-      <p class="text-secondary small mb-0">Buku digital & fisik</p>
-    </div>
-  </div>
-
-  <div class="col-md-3 col-sm-6">
-    <div class="card dashboard-card p-4 shadow-sm">
-      <h6 class="fw-bold mb-2"><i class="fa fa-exchange-alt text-warning me-2"></i> Sedang Dipinjam</h6>
-      <h3 class="fw-bold">{{ $totalDipinjam ?? 0 }}</h3>
-      <p class="text-secondary small mb-0">Transaksi aktif</p>
-    </div>
-  </div>
-
-  <div class="col-md-3 col-sm-6">
-    <div class="card dashboard-card p-4 shadow-sm">
-      <h6 class="fw-bold mb-2"><i class="fa fa-wallet text-danger me-2"></i> Total Denda</h6>
-      <h3 class="fw-bold">Rp{{ number_format($totalDenda ?? 0, 0, ',', '.') }}</h3>
-      <p class="text-secondary small mb-0">Denda keterlambatan</p>
-    </div>
-  </div>
-</div>
-
-<div class="card p-4 mb-4 shadow-sm dashboard-card">
-  <h5 class="fw-bold mb-3"><i class="fa fa-chart-line text-primary me-2"></i> Tren Peminjaman 7 Hari Terakhir</h5>
-  <canvas id="loanChart" height="100"></canvas>
-</div>
-
-<div class="card p-4 shadow-sm dashboard-card bg-white table-static-light">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h5 class="fw-bold mb-0 text-dark">
-      <i class="fa fa-clock text-indigo me-2"></i> Aktivitas Terbaru
-    </h5>
-    <a href="/peminjaman" class="text-decoration-none small fw-semibold text-indigo">
-      Lihat Semua <i class="fa fa-arrow-right"></i>
-    </a>
-  </div>
-
-  <div class="table-responsive">
-    <table class="table align-middle table-light-mode">
-      <thead class="table-light">
-        <tr>
-          <th>#</th><th>Nama Pengguna</th><th>Judul Buku</th><th>Status</th><th>Tanggal</th>
-        </tr>
-      </thead>
-      <tbody>
-        @forelse($aktivitas as $a)
-          <tr>
-            <td>{{ $loop->iteration }}</td>
-            <td>{{ $a['nama'] ?? 'Tidak diketahui' }}</td>
-            <td>{{ $a['buku'] ?? 'Tanpa Judul' }}</td>
-            <td>
-              @if($a['status'] === 'Dipinjam')
-                <span class="badge bg-warning text-dark">Dipinjam</span>
-              @elseif($a['status'] === 'Dikembalikan')
-                <span class="badge bg-success">Dikembalikan</span>
-              @elseif($a['status'] === 'Terverifikasi')
-                <span class="badge bg-info text-dark">Terverifikasi</span>
-              @else
-                <span class="badge bg-secondary">{{ ucfirst($a['status'] ?? 'Tidak Diketahui') }}</span>
-              @endif
-            </td>
-            <td>{{ $a['tanggal'] ?? '-' }}</td>
-          </tr>
-        @empty
-          <tr><td colspan="5" class="text-center py-4 text-muted"><i class="fa fa-info-circle me-1"></i> Tidak ada aktivitas terbaru 📭</td></tr>
-        @endforelse
-      </tbody>
-    </table>
-  </div>
-</div>
-
-{{-- CHART SCRIPT --}}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-  const ctx = document.getElementById('loanChart').getContext('2d');
-  const labels = {!! json_encode(collect($grafikData)->pluck('tanggal')) !!};
-  const values = {!! json_encode(collect($grafikData)->pluck('jumlah')) !!};
-
-  const getChartColors = () => ({
-    text: document.body.classList.contains('dark-mode') ? '#f9fafb' : '#1f2937',
-    grid: document.body.classList.contains('dark-mode') ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-    line: document.body.classList.contains('dark-mode') ? '#a5b4fc' : '#667eea',
-    fill: document.body.classList.contains('dark-mode') ? 'rgba(165,180,252,0.15)' : 'rgba(102,126,234,0.15)'
-  });
-
-  let chartColors = getChartColors();
-  const loanChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: labels,
-      datasets: [{
-        label: 'Jumlah Peminjaman',
-        data: values,
-        borderColor: chartColors.line,
-        backgroundColor: chartColors.fill,
-        borderWidth: 3,
-        pointBackgroundColor: chartColors.line,
-        tension: 0.4,
-        fill: true
-      }]
-    },
-    options: {
-      responsive: true,
-      scales: {
-        y: { beginAtZero: true, ticks: { color: chartColors.text }, grid: { color: chartColors.grid } },
-        x: { ticks: { color: chartColors.text }, grid: { color: chartColors.grid } }
-      },
-      plugins: { legend: { labels: { color: chartColors.text } } }
-    }
-  });
-
-  const observer = new MutationObserver(() => {
-    const newColors = getChartColors();
-    loanChart.options.scales.x.ticks.color = newColors.text;
-    loanChart.options.scales.y.ticks.color = newColors.text;
-    loanChart.options.scales.x.grid.color = newColors.grid;
-    loanChart.options.scales.y.grid.color = newColors.grid;
-    loanChart.data.datasets[0].borderColor = newColors.line;
-    loanChart.data.datasets[0].backgroundColor = newColors.fill;
-    loanChart.data.datasets[0].pointBackgroundColor = newColors.line;
-    loanChart.options.plugins.legend.labels.color = newColors.text;
-    loanChart.update();
-  });
-  observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
-});
-</script>
 <style>
-/* === Global Dynamic Font Color === */
-body.light-mode :not(.sidebar-admin, .sidebar-admin *) {
-  color: #1a202c;
-}
-body.dark-mode :not(.sidebar-admin, .sidebar-admin *) {
-  color: #f8fafc;
+/* ==========================================================
+   🌗 THEME-AWARE UI (FULL VERSION)
+   ========================================================== */
+
+/* === Default (Dark Mode) === */
+:root {
+    --bg-card: rgba(255, 255, 255, 0.1);
+    --bg-card-secondary: rgba(255, 255, 255, 0.05);
+    --border-color: rgba(255, 255, 255, 0.18);
+    --text-primary: #ffffff;
+    --text-secondary: rgba(255, 255, 255, 0.85);
+    --text-tertiary: rgba(255, 255, 255, 0.5);
+    --input-bg: rgba(255, 255, 255, 0.08);
+    --input-bg-focus: rgba(255, 255, 255, 0.15);
+    --shadow-color: rgba(31, 38, 135, 0.37);
+    --book-body-bg: rgba(0, 0, 0, 0.2);
+    --empty-icon-color: #667eea;
+    --label-color: #a78bfa;
 }
 
-/* === Titles === */
-.dashboard-title {
-  color: #1f2937;
-  font-weight: 700;
-  transition: color 0.3s;
-}
-body.dark-mode .dashboard-title {
-  color: #f9fafb;
-}
-.dashboard-desc {
-  color: #4b5563;
-  transition: color 0.3s;
-}
-body.dark-mode .dashboard-desc {
-  color: #d1d5db;
-}
-
-/* === Cards === */
-.dashboard-card {
-  background: #ffffff;
-  border-radius: 18px;
-  border: 1px solid rgba(0,0,0,0.08);
-  transition: all 0.3s ease;
-  color: #1a202c;
-}
-.dashboard-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 25px rgba(0,0,0,0.08);
-}
-body.dark-mode .dashboard-card {
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.1);
-  color: #f8fafc;
-}
-body.dark-mode .dashboard-card:hover {
-  box-shadow: 0 8px 25px rgba(102,126,234,0.25);
+/* === Light Mode Auto (OS preference) === */
+@media (prefers-color-scheme: light) {
+    :root {
+        --bg-card: rgba(255, 255, 255, 0.98);
+        --bg-card-secondary: rgba(248, 250, 252, 0.95);
+        --border-color: rgba(148, 163, 184, 0.3);
+        --text-primary: #1e293b;
+        --text-secondary: #334155;
+        --text-tertiary: #64748b;
+        --input-bg: #f8fafc;
+        --input-bg-focus: #ffffff;
+        --shadow-color: rgba(15, 23, 42, 0.08);
+        --book-body-bg: rgba(248, 250, 252, 0.8);
+        --empty-icon-color: #667eea;
+        --label-color: #4f46e5;
+    }
 }
 
-/* === Keep Activity Table Always Light === */
-.table-static-light {
-  background: #ffffff !important;
-  color: #1a202c !important;
-}
-.table-static-light table,
-.table-static-light th,
-.table-static-light td {
-  background: #ffffff !important;
-  color: #1a202c !important;
-  border-color: #e5e7eb !important;
-}
-.table-static-light .table-light {
-  background: #f8f9fa !important;
-  color: #1a202c !important;
-}
-.table-static-light .text-muted {
-  color: #6b7280 !important;
+/* === Manual Theme Switch (via JS toggle) === */
+[data-theme="dark"], body.dark-mode {
+    --bg-card: rgba(255, 255, 255, 0.1);
+    --bg-card-secondary: rgba(255, 255, 255, 0.05);
+    --border-color: rgba(255, 255, 255, 0.18);
+    --text-primary: #ffffff;
+    --text-secondary: rgba(255, 255, 255, 0.85);
+    --text-tertiary: rgba(255, 255, 255, 0.5);
+    --input-bg: rgba(255, 255, 255, 0.08);
+    --input-bg-focus: rgba(255, 255, 255, 0.15);
+    --shadow-color: rgba(31, 38, 135, 0.37);
+    --book-body-bg: rgba(0, 0, 0, 0.2);
+    --empty-icon-color: #667eea;
+    --label-color: #a5b4fc;
 }
 
-/* === Secondary Text === */
-.text-secondary { color: #6b7280 !important; }
-body.dark-mode .text-secondary { color: #d1d5db !important; }
-
-/* === Custom Colors === */
-.text-indigo { color: #6366f1 !important; }
-body.dark-mode .text-indigo { color: #a5b4fc !important; }
-
-/* === Sidebar Admin === */
-.sidebar-admin {
-  background: linear-gradient(180deg, #1e293b 0%, #111827 100%);
-  color: #f8fafc;
-  min-height: 100vh;
-  width: 250px;
-  padding: 20px 0;
-}
-.sidebar-admin a {
-  color: #e5e7eb;
-  display: flex;
-  align-items: center;
-  padding: 10px 20px;
-  text-decoration: none;
-  transition: all 0.2s ease;
-}
-.sidebar-admin a:hover {
-  background: rgba(255,255,255,0.1);
-  color: #ffffff;
-}
-.sidebar-admin a.active {
-  background: #3b82f6;
-  color: #fff;
-  border-radius: 8px;
-}
-.sidebar-admin i {
-  width: 20px;
-  margin-right: 10px;
+[data-theme="light"], body.light-mode {
+    --bg-card: rgba(255, 255, 255, 0.98);
+    --bg-card-secondary: rgba(248, 250, 252, 0.95);
+    --border-color: rgba(148, 163, 184, 0.3);
+    --text-primary: #1e293b;
+    --text-secondary: #334155;
+    --text-tertiary: #64748b;
+    --input-bg: #f8fafc;
+    --input-bg-focus: #ffffff;
+    --shadow-color: rgba(15, 23, 42, 0.08);
+    --book-body-bg: rgba(248, 250, 252, 0.8);
+    --empty-icon-color: #667eea;
+    --label-color: #1a1a1a;
 }
 
-/* === Responsif === */
+/* === Page Title === */
+.page-title {
+    color: var(--text-primary);
+    font-weight: 700;
+    text-shadow: 0 0 20px rgba(79, 172, 254, 0.3);
+}
+
+/* === Search Card === */
+.search-card {
+    background: var(--bg-card);
+    backdrop-filter: blur(10px);
+    border-radius: 25px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 8px 32px 0 var(--shadow-color);
+    padding: 30px;
+    margin-bottom: 30px;
+    animation: fadeIn 0.6s ease-out;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* === Search Input & Label === */
+.search-label {
+    color: var(--label-color);
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.search-input {
+    background: var(--input-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 15px;
+    color: var(--text-primary);
+    padding: 12px 20px;
+    transition: all 0.3s ease;
+    width: 100%;
+}
+
+.search-input:focus {
+    background: var(--input-bg-focus);
+    border-color: #667eea;
+    box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+    color: var(--text-primary);
+    outline: none;
+}
+
+.search-input::placeholder {
+    color: var(--text-tertiary);
+}
+.search-input option {
+    background: var(--input-bg);
+    color: var(--text-primary);
+}
+
+/* === Buttons === */
+.btn-add {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    border: none;
+    padding: 12px 30px;
+    border-radius: 50px;
+    color: white;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 20px rgba(56, 239, 125, 0.4);
+    display: inline-block;
+}
+.btn-add:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 30px rgba(56, 239, 125, 0.6);
+    color: white;
+}
+.btn-search {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    padding: 12px 0;
+    border-radius: 15px;
+    color: white;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+}
+.btn-search:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(102, 126, 234, 0.6);
+}
+
+/* === Book Card === */
+.book-card {
+    background: var(--bg-card);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    height: 100%;
+    box-shadow: 0 8px 25px var(--shadow-color);
+    animation: slideUp 0.5s ease-out backwards;
+}
+.book-card:hover {
+    transform: translateY(-10px) scale(1.02);
+    box-shadow: 0 15px 45px rgba(102, 126, 234, 0.4);
+    border-color: rgba(102, 126, 234, 0.5);
+}
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.book-image-wrapper {
+    position: relative;
+    height: 250px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 20px;
+    overflow: hidden;
+}
+.book-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: transform 0.4s ease;
+    filter: drop-shadow(0 5px 15px rgba(0, 0, 0, 0.3));
+}
+.book-card:hover .book-image { transform: scale(1.1) rotate(2deg); }
+
+.book-body {
+    padding: 20px;
+    background: var(--book-body-bg);
+}
+.book-title {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 15px;
+    min-height: 55px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+.book-title:hover {
+    color: #667eea;
+    text-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
+}
+.book-info {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+.book-info-label {
+    color: #667eea;
+    font-weight: 700;
+}
+
+/* === Status Badge === */
+.status-badge {
+    display: inline-block;
+    padding: 6px 15px;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 5px;
+}
+.status-tersedia {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    color: white;
+    box-shadow: 0 3px 10px rgba(56, 239, 125, 0.3);
+}
+.status-dipinjam {
+    background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);
+    color: white;
+    box-shadow: 0 3px 10px rgba(238, 9, 121, 0.3);
+}
+
+/* === Buttons in Card === */
+.book-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border-color);
+}
+.btn-action {
+    flex: 1;
+    padding: 10px 5px;
+    border-radius: 10px;
+    border: none;
+    font-weight: 700;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+    color: white;
+    text-decoration: none;
+    text-align: center;
+}
+.btn-detail {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    box-shadow: 0 3px 10px rgba(79, 172, 254, 0.3);
+}
+.btn-detail:hover { transform: translateY(-2px); }
+.btn-edit {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+.btn-edit:hover { transform: translateY(-2px); }
+.btn-delete {
+    background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);
+}
+.btn-delete:hover { transform: translateY(-2px); }
+.btn-pinjam {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+.btn-pinjam:hover { transform: translateY(-2px); }
+
+/* === Pagination === */
+.pagination-wrapper {
+    background: var(--bg-card);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 20px 30px;
+    border: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 30px;
+}
+.pagination-info {
+    color: var(--text-secondary);
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+
+/* === Empty State === */
+.empty-state {
+    background: var(--bg-card);
+    backdrop-filter: blur(10px);
+    border-radius: 25px;
+    border: 2px dashed var(--border-color);
+    text-align: center;
+    padding: 80px 40px;
+    margin: 20px 0;
+    animation: fadeIn 0.6s ease-out;
+}
+.empty-state i {
+    font-size: 5rem;
+    margin-bottom: 25px;
+    color: var(--empty-icon-color);
+    opacity: 0.7;
+}
+.empty-state h3 {
+    color: var(--text-primary);
+    font-weight: 700;
+    margin-bottom: 15px;
+    font-size: 1.5rem;
+}
+.empty-state p {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    margin: 0;
+    font-weight: 500;
+}
+
+/* === Responsive Tweaks === */
 @media (max-width: 768px) {
-  .dashboard-card { text-align: center; }
-  .sidebar-admin { width: 100%; position: relative; }
+    .search-card { padding: 20px; }
+    .empty-state { padding: 60px 20px; }
+    .empty-state i { font-size: 4rem; }
+    .empty-state h3 { font-size: 1.25rem; }
+    .empty-state p { font-size: 0.95rem; }
 }
 </style>
 
+{{-- Tombol Tambah Buku --}}
+@if (session()->has('admin'))
+    <div class="mb-4">
+        <a href="{{ route('buku.tambah') }}" class="btn-add">
+            <i class="fas fa-plus me-2"></i> Tambah Buku Baru
+        </a>
+    </div>
+@endif
+
+{{-- Form Pencarian --}}
+<div class="search-card">
+    <form action="{{ url('/buku') }}" method="GET">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label class="search-label"><i class="fas fa-book me-2"></i>Judul Buku</label>
+                <input type="text" name="judul" class="form-control search-input"
+                       placeholder="Cari judul..." value="{{ request('judul') }}">
+            </div>
+            <div class="col-md-2">
+                <label class="search-label"><i class="fas fa-barcode me-2"></i>Kode Buku</label>
+                <input type="text" name="kode_buku" class="form-control search-input"
+                       placeholder="Kode buku..." value="{{ request('kode_buku') }}">
+            </div>
+            <div class="col-md-3">
+                <label class="search-label"><i class="fas fa-user me-2"></i>Pengarang</label>
+                <input type="text" name="pengarang" class="form-control search-input"
+                       placeholder="Nama pengarang..." value="{{ request('pengarang') }}">
+            </div>
+            <div class="col-md-2">
+                <label class="search-label"><i class="fas a-filter me-2"></i>Status</label>
+                <select name="status" class="form-control search-input">
+                    <option value="">Semua</option>
+                    <option value="Tersedia" {{ request('status') == 'Tersedia' ? 'selected' : '' }}>Tersedia</option>
+                    <option value="Dipinjam"  {{ request('status') == 'Dipinjam'  ? 'selected' : '' }}>Dipinjam</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="search-label" style="opacity:0;">Action</label>
+                <button class="btn btn-search w-100" type="submit">
+                    <i class="fas fa-search me-2"></i> Cari
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+{{-- Grid Buku --}}
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
+    @forelse ($buku as $item)
+        @php
+            $id         = $item['id'] ?? null;
+            $judul      = $item['judul'] ?? '-';
+            $kode_buku  = $item['kode_buku'] ?? '-';
+            $pengarang  = $item['pengarang'] ?? '-';
+            $gambar     = $item['gambar'] ?? null;
+            $status     = $item['status'] ?? 'Tersedia';
+        @endphp
+
+        <div class="col">
+            <div class="book-card">
+                {{-- Gambar Buku --}}
+                <div class="book-image-wrapper">
+                    @if (!empty($gambar))
+                        <img src="{{ asset('img/buku/' . $gambar) }}" alt="{{ $judul }}" class="book-image">
+                    @else
+                        <img src="{{ asset('images/noImage.jpg') }}" alt="No Image" class="book-image">
+                    @endif
+                </div>
+
+                {{-- Body Card --}}
+                <div class="book-body">
+                    <a href="{{ url('/buku/' . $id) }}" class="book-title">
+                        {{ $judul }}
+                    </a>
+
+                    <div class="book-info">
+                        <span class="book-info-label">Kode:</span> {{ $kode_buku }}
+                    </div>
+                    <div class="book-info">
+                        <span class="book-info-label">Pengarang:</span> {{ $pengarang }}
+                    </div>
+                    <div>
+                        <span class="status-badge {{ $status == 'Tersedia' ? 'status-tersedia' : 'status-dipinjam' }}">
+                            {{ $status }}
+                        </span>
+                    </div>
+
+                    {{-- Tombol Aksi --}}
+                    @if (session()->has('admin'))
+                        <div class="book-actions">
+                            <a href="{{ url('/buku/' . $id) }}" class="btn-action btn-detail">
+                                <i class="fas fa-eye"></i> Detail
+                            </a>
+                            <a href="{{ url('/buku/' . $id . '/edit') }}" class="btn-action btn-edit">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+                            <form action="{{ route('buku.destroy', $item['id']) }}" method="POST"
+                                  class="d-inline" onsubmit="return confirm('Yakin ingin menghapus buku ini?')"
+                                  style="flex:1;">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn-action btn-delete w-100">
+                                    <i class="fas fa-trash"></i> Hapus
+                                </button>
+                            </form>
+                        </div>
+                    @else
+                        <div class="book-actions">
+                            <a href="{{ url('/buku/' . $id) }}" class="btn-action btn-detail">
+                                <i class="fas fa-eye"></i> Detail
+                            </a>
+                            <a href="{{ url('/peminjaman/create') }}" class="btn-action btn-pinjam">
+                                <i class="fas fa-book-reader"></i> Pinjam
+                            </a>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    @empty
+        <div class="col-12">
+            <div class="empty-state">
+                <i class="fas fa-book-open"></i>
+                <h3>Tidak Ada Buku Ditemukan</h3>
+                <p>Coba ubah kriteria pencarian Anda atau hapus filter yang diterapkan</p>
+            </div>
+        </div>
+    @endforelse
+</div>
+
+{{-- Pagination --}}
+@if ($buku->hasPages())
+    <div class="pagination-wrapper">
+        <div class="pagination-info">
+            Halaman {{ $buku->currentPage() }} dari {{ $buku->lastPage() }}
+        </div>
+        <div>
+            {{ $buku->links() }}
+        </div>
+    </div>
+@endif
 @endsection
