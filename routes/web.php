@@ -5,6 +5,9 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\BukuController;
 use App\Http\Controllers\PeminjamanController;
+use App\Http\Controllers\PengembalianController;
+use App\Http\Controllers\DashboardAdminController;
+
 
 // =====================================================
 // 🔐 AUTENTIKASI
@@ -14,15 +17,8 @@ Route::get('/login', [AuthController::class, 'showLogin']);
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
 
-// =====================================================
-// 🧭 DASHBOARD
-// =====================================================
-Route::get('/dashboard-admin', function () {
-    if (!session()->has('admin')) {
-        return redirect('/')->with('error', 'Silakan login sebagai admin!');
-    }
-    return view('dashboard.admin');
-})->name('dashboard.admin');
+Route::get('/dashboard-admin', [DashboardAdminController::class, 'index'])
+    ->name('dashboard.admin');
 
 Route::get('/dashboard-user', [PeminjamanController::class, 'dashboard'])->name('dashboard.user');
 
@@ -54,7 +50,11 @@ Route::get('/peminjaman', [PeminjamanController::class, 'index'])->name('peminja
 Route::get('/peminjaman/create/{id_buku}', [PeminjamanController::class, 'create'])->name('peminjaman.create');
 Route::get('/peminjaman/{id}/edit', [PeminjamanController::class, 'edit'])->name('peminjaman.edit');
 Route::put('/peminjaman/{id}', [PeminjamanController::class, 'update'])->name('peminjaman.update');
+Route::post('/pengembalian/simpan', [PengembalianController::class, 'simpan']);
 
+Route::get('/peminjaman', [PeminjamanController::class, 'adminIndex'])
+    ->name('admin.peminjaman');
+Route::get('/pengembalian', [PeminjamanController::class, 'adminPengembalian'])->name('admin.pengembalian');
 // =====================================================
 // 🧪 DEBUG
 // =====================================================
