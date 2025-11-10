@@ -6,6 +6,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\BukuController;
 use App\Http\Controllers\PeminjamanController;
 use App\Http\Controllers\PengembalianController;
+use App\Http\Controllers\DashboardAdminController;
 
 
 // =====================================================
@@ -16,15 +17,8 @@ Route::get('/login', [AuthController::class, 'showLogin']);
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
 
-// =====================================================
-// 🧭 DASHBOARD
-// =====================================================
-Route::get('/dashboard-admin', function () {
-    if (!session()->has('admin')) {
-        return redirect('/')->with('error', 'Silakan login sebagai admin!');
-    }
-    return view('dashboard.admin');
-})->name('dashboard.admin');
+Route::get('/dashboard-admin', [DashboardAdminController::class, 'index'])
+    ->name('dashboard.admin');
 
 Route::get('/dashboard-user', [PeminjamanController::class, 'dashboard'])->name('dashboard.user');
 

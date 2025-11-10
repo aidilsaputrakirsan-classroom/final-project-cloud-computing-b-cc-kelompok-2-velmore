@@ -103,22 +103,11 @@ body.light-mode .form-check-input { border-color:#667eea; background:white; }
   transition:all .3s;
 }
 .btn-accent:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(102,126,234,0.6); }
-
-/* === Custom Modal === */
-.custom-modal {
-  position:fixed; inset:0;
-  background:rgba(0,0,0,0.6);
-  backdrop-filter:blur(5px);
-  display:flex; align-items:center; justify-content:center;
-  z-index:9999;
-}
-.custom-modal.d-none { display:none; }
 .modal-box {
   background:white; color:#111;
   border-radius:16px; padding:24px;
   width:90%; max-width:420px;
   box-shadow:0 8px 24px rgba(0,0,0,0.25);
-  animation:fadeIn .3s ease;
 }
 .modal-box.dark { background:rgba(30,41,59,0.97); color:#f1f5f9; }
 @keyframes fadeIn { from{transform:translateY(-10px);opacity:0;} to{transform:translateY(0);opacity:1;} }
@@ -152,6 +141,99 @@ body.dark-mode .info-badge {
   color: #f8fafc;
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
 }
+
+.custom-modal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9998;
+}
+
+.custom-modal.active { display: flex !important; }
+
+/* overlay hitam di belakang box */
+.modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(5px);
+  z-index: 1;
+}
+
+/* box isi modal di atas overlay */
+.modal-box {
+  position: relative;
+  z-index: 2;
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  width: 90%;
+  max-width: 420px;
+  color: #111;
+}
+
+/* checkbox benar-benar di atas semua layer */
+.form-check-input {
+  position: relative;
+  z-index: 3;
+  cursor: pointer;
+}
+
+/* === Checkbox Universal Fix === */
+.form-check-input {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  appearance: none;
+  outline: none;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+  border: 2px solid #667eea; /* warna dasar border */
+  background: #fff; /* default light mode */
+}
+
+/* === LIGHT MODE === */
+body.light-mode .form-check-input {
+  background: #fff;
+  border-color: #667eea;
+}
+body.light-mode .form-check-input:checked {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-color: #667eea;
+}
+body.light-mode .form-check-input:checked::after {
+  content: "✔";
+  position: absolute;
+  color: #fff;
+  font-weight: bold;
+  top: -3px;
+  left: 3px;
+  font-size: 13px;
+}
+
+/* === DARK MODE === */
+body.dark-mode .form-check-input {
+  background: rgba(30, 41, 59, 0.8);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+body.dark-mode .form-check-input:checked {
+  background: linear-gradient(135deg, #818cf8, #a78bfa);
+  border-color: #a78bfa;
+}
+body.dark-mode .form-check-input:checked::after {
+  content: "✔";
+  position: absolute;
+  color: #fff;
+  font-weight: bold;
+  top: -3px;
+  left: 3px;
+  font-size: 13px;
+}
+
+
 
 </style>
 
@@ -324,8 +406,8 @@ document.addEventListener("DOMContentLoaded", function () {
       });
     </script>
 
-    <div class="form-check mt-3 mb-3">
-      <input class="form-check-input" type="checkbox" id="modalSetuju">
+ <div class="form-check mt-3 mb-3">
+      <input class="form-check-input" type="checkbox" id="modalSetuju" name="setuju" value="1">
       <label class="form-check-label" for="modalSetuju">
         Saya siap dikenakan <strong>denda / ganti rugi</strong> jika buku rusak atau hilang.
       </label>
@@ -345,22 +427,21 @@ const SUPABASE_URL = "{{ env('SUPABASE_URL') }}/rest/v1/buku";
 const SUPABASE_KEY = "{{ env('SUPABASE_KEY') }}";
 
 function openModal(id, judul) {
-  currentBookId = id; currentJudul = judul;
+  currentBookId = id;
+  currentJudul = judul;
+
   document.getElementById('modalJudul').textContent = judul;
   document.getElementById('modalKontak').value = '';
   document.getElementById('modalTanggal').value = '';
   document.getElementById('modalSetuju').checked = false;
-  document.getElementById('customModal').classList.remove('d-none');
 
-  if (document.body.classList.contains('dark-mode')) {
-    document.getElementById('modalBox').classList.add('dark');
-  } else {
-    document.getElementById('modalBox').classList.remove('dark');
-  }
+  const modal = document.getElementById('customModal');
+  modal.classList.add('active');
 }
 
 function closeModal() {
-  document.getElementById('customModal').classList.add('d-none');
+  const modal = document.getElementById('customModal');
+  modal.classList.remove('active');
 }
 
 async function submitPinjam() {
@@ -1111,7 +1192,106 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 </style>
   {{-- ================= TAB RIWAYAT ================= --}}
-  @if($tab === 'riwayat')
-    {{-- ... isi kode riwayat ... --}}
-  @endif  {{-- ⬅️ WAJIB ADA INI DI BAGIAN PALING AKHIR --}}
+@if($tab === 'riwayat')
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+    <div>
+      <h2 class="fw-bold mb-1">📖 Riwayat Peminjaman</h2>
+      <p class="text-secondary mb-0">Lihat semua buku yang pernah Anda pinjam dan statusnya.</p>
+    </div>
+  </div>
+
+  {{-- 🔍 Pencarian Riwayat --}}
+  <form method="GET" class="mb-3 d-flex gap-2 flex-wrap">
+    <input type="hidden" name="tab" value="riwayat">
+    <input type="text" name="search" class="form-control input-theme"
+           placeholder="Cari berdasarkan judul buku..."
+           value="{{ request('search') }}">
+    <button class="btn btn-accent px-4"><i class="fa fa-search me-1"></i> Cari</button>
+  </form>
+
+  {{-- 📋 Tabel Riwayat --}}
+  <div class="table-responsive rounded-4 shadow-sm">
+    <table class="table align-middle text-center">
+      <thead class="table-dark">
+        <tr>
+          <th>#</th>
+          <th>Judul Buku</th>
+          <th>Tanggal Pinjam</th>
+          <th>Tanggal Kembali</th>
+          <th>Denda</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        @php
+          $search = strtolower(request('search', ''));
+          $filtered = collect($riwayat)->filter(function($r) use ($search) {
+              return str_contains(strtolower($r['buku']['judul'] ?? ''), $search);
+          });
+        @endphp
+
+        @forelse($filtered as $row)
+          <tr>
+            <td>{{ $loop->iteration }}</td>
+            <td class="fw-semibold">{{ $row['buku']['judul'] ?? '-' }}</td>
+            <td>{{ $row['tanggal_pinjam'] }}</td>
+            <td>{{ $row['tanggal_kembali'] }}</td>
+            <td>
+              @if(($row['denda'] ?? 0) > 0)
+                <span class="badge bg-danger">Rp{{ number_format($row['denda'], 0, ',', '.') }}</span>
+              @else
+                <span class="badge bg-success">Tidak Ada</span>
+              @endif
+            </td>
+            <td>
+              @php $status = strtolower($row['status']); @endphp
+              <span class="badge
+                @if($status == 'terverifikasi') bg-primary
+                @elseif($status == 'dikembalikan') bg-info
+                @else bg-secondary @endif">
+                {{ ucfirst($row['status']) }}
+              </span>
+            </td>
+          </tr>
+        @empty
+          <tr>
+            <td colspan="6" class="text-center py-5 text-muted">
+              <i class="fa fa-info-circle fa-2x d-block mb-2"></i>
+              Tidak ada riwayat peminjaman 📭
+            </td>
+          </tr>
+        @endforelse
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{{-- === Adaptif untuk Light/Dark Mode === --}}
+<style>
+body.light-mode table {
+  background-color: #fff;
+  color: #1a202c;
+}
+body.dark-mode table {
+  background-color: rgba(30, 41, 59, 0.7);
+  color: #f8fafc;
+}
+body.dark-mode thead.table-dark {
+  background-color: #1e293b !important;
+  color: #f8fafc;
+}
+body.light-mode thead.table-dark {
+  background-color: #4f46e5 !important;
+  color: #fff;
+}
+.table tbody tr:hover {
+  background-color: rgba(102, 126, 234, 0.08);
+  transition: 0.3s;
+}
+body.dark-mode .table tbody tr:hover {
+  background-color: rgba(102, 126, 234, 0.15);
+}
+</style>
+@endif
 @endsection
