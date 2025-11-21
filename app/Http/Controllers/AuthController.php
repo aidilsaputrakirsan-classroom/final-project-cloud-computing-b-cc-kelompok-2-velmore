@@ -45,19 +45,19 @@ class AuthController extends Controller
             $data = $user[0];
 
             // 🔐 Cek password secara manual (jika hash disimpan)
-            if (!password_verify($request->password, $data['password'])) {
+           if ($request->password !== $data['password']) {
                 return back()->with('error', 'Password salah!');
             }
 
             // 🧠 Tentukan role
             $role = strtolower($data['role'] ?? 'user');
 
-            if ($role === 'admin') {
+            if (!empty($data['isadmin']) && $data['isadmin'] === true) {
                 session(['admin' => $data]);
-                return redirect('/dashboard.admin')->with('success', 'Login Admin berhasil!');
+                return redirect()->route('dashboard.admin')->with('success', 'Login Admin berhasil!');
             } else {
                 session(['user' => $data]);
-                return redirect('/dashboard.user')->with('success', 'Login Pengguna berhasil!');
+                return redirect()->route('dashboard.user')->with('success', 'Login Pengguna berhasil!');
             }
         }
 

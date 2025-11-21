@@ -43,7 +43,7 @@
                 <a href="{{ route('pengguna.edit', $user['id']) }}" class="btn btn-warning btn-sm">
                   <i class="fa fa-edit"></i> Edit
                 </a>
-                <form action="{{ route('pengguna.delete', $user['id']) }}" method="POST" class="d-inline">
+               <form action="{{ route('pengguna.destroy', $user['id']) }}" method="POST" class="d-inline">
                   @csrf
                   @method('DELETE')
                   <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Yakin hapus pengguna ini?')">

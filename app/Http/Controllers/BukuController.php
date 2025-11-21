@@ -4,98 +4,144 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\File;
 use Illuminate\Pagination\LengthAwarePaginator;
 use RealRashid\SweetAlert\Facades\Alert;
 
 class BukuController extends Controller
 {
-    protected $supabaseUrl;
-    protected $supabaseKey;
+    private $url;
+    private $key;
 
     public function __construct()
     {
-        $this->supabaseUrl = env('SUPABASE_URL') . '/rest/v1/buku';
-        $this->supabaseKey = env('SUPABASE_KEY');
+        $this->url = env('SUPABASE_URL') . '/rest/v1/buku';
+        $this->key = env('SUPABASE_KEY');
     }
 
-    /**
-     * 🔹 Daftar Buku dengan filter
-     */
-    public function index(Request $request)
+    private function headers()
     {
-        if (!session()->has('admin')) {
-            return redirect('/')->with('error', 'Akses ditolak! Anda bukan admin.');
-        }
-
-        $judul = $request->query('judul');
-        $kode_buku = $request->query('kode_buku');
-        $pengarang = $request->query('pengarang');
-        $status = $request->query('status');
-
-        // Build query Supabase
-        $filters = [];
-        if ($judul) $filters[] = "judul=ilike.%$judul%";
-        if ($kode_buku) $filters[] = "kode_buku=ilike.%$kode_buku%";
-        if ($pengarang) $filters[] = "pengarang=ilike.%$pengarang%";
-        if ($status) $filters[] = "status=eq.$status";
-
-        $queryString = '';
-        if (!empty($filters)) {
-            $queryString = '?' . implode('&', $filters);
-        }
-
-        $response = Http::withHeaders([
-            'apikey' => $this->supabaseKey,
-            'Authorization' => 'Bearer ' . $this->supabaseKey,
-        ])->get($this->supabaseUrl . $queryString);
-
-        $items = $response->json() ?? [];
-
-        // Pagination manual
-        $perPage = 10;
-        $currentPage = LengthAwarePaginator::resolveCurrentPage();
-        $collection = collect($items);
-        $currentItems = $collection->slice(($currentPage - 1) * $perPage, $perPage)->values();
-
-        $buku = new LengthAwarePaginator(
-            $currentItems,
-            $collection->count(),
-            $perPage,
-            $currentPage,
-            ['path' => $request->url(), 'query' => $request->query()]
-        );
-
-        return view('buku.tampil', compact('buku'));
+        return [
+            'apikey' => $this->key,
+            'Authorization' => "Bearer {$this->key}",
+        ];
     }
 
-    /**
-     * 🔹 Form Tambah Buku
-     */
+    private function uploadToSupabase($file)
+    {
+        $bucket = 'buku';
+        $filename = time() . '_' . $file->getClientOriginalName();
+        $content = file_get_contents($file->getRealPath());
+
+        $upload = Http::withHeaders([
+            'apikey' => $this->key,
+            'Authorization' => "Bearer {$this->key}",
+            'Content-Type' => 'application/octet-stream'
+        ])->put(env('SUPABASE_URL') . "/storage/v1/object/$bucket/$filename", $content);
+
+        if ($upload->successful()) {
+            return env('SUPABASE_URL') . "/storage/v1/object/public/$bucket/$filename";
+        }
+        return null;
+    }
+
+    public function index(Request $request)
+{
+    if (!session()->has('admin')) return redirect('/');
+
+    // Base query + join kategori
+    $query = "?select=*,kategori_buku(nama)";
+
+    // ===============================
+    // 🔍 FILTER PENCARIAN
+    // ===============================
+
+    // Filter judul
+    if ($request->filled('judul')) {
+        $judul = $request->judul;
+        $query .= "&judul=ilike.%{$judul}%";
+    }
+
+    // Filter kode buku
+    if ($request->filled('kode_buku')) {
+        $kode = $request->kode_buku;
+        $query .= "&kode_buku=ilike.%{$kode}%";
+    }
+
+    // Filter pengarang
+    if ($request->filled('pengarang')) {
+        $pengarang = $request->pengarang;
+        $query .= "&pengarang=ilike.%{$pengarang}%";
+    }
+
+    // Filter status
+    if ($request->filled('status')) {
+        $status = $request->status;
+        $query .= "&status=eq.{$status}";
+    }
+
+    // Filter kategori
+    if ($request->filled('id_kategori')) {
+        $kategori = $request->id_kategori;
+        $query .= "&id_kategori=eq.{$kategori}";
+    }
+
+    // ===============================
+    // 🔥 EXECUTE QUERY SUPABASE
+    // ===============================
+    $response = Http::withHeaders($this->headers())
+        ->get($this->url . $query);
+
+    $items = $response->json() ?? [];
+
+    // Mapping kategori
+    foreach ($items as &$i) {
+        $i['kategori_nama'] = $i['kategori_buku']['nama'] ?? '-';
+    }
+
+    // ===============================
+    // 📌 Pagination manual
+    // ===============================
+    $perPage = 12;
+    $page = LengthAwarePaginator::resolveCurrentPage();
+    $collection = collect($items);
+
+    $current = $collection
+        ->slice(($page - 1) * $perPage, $perPage)
+        ->values();
+
+    $buku = new LengthAwarePaginator(
+        $current,
+        $collection->count(),
+        $perPage,
+        $page,
+        ['path' => $request->url(), 'query' => $request->query()]
+    );
+
+    // ===============================
+    // 📌 Ambil kategori (untuk filter)
+    // ===============================
+    $kategori = Http::withHeaders($this->headers())
+        ->get(env('SUPABASE_URL') . '/rest/v1/kategori_buku')
+        ->json();
+
+    return view('buku.tampil', compact('buku', 'kategori'));
+}
+
+
     public function create()
     {
-        if (!session()->has('admin')) {
-            return redirect('/')->with('error', 'Akses ditolak!');
-        }
+        if (!session()->has('admin')) return redirect('/');
 
-        $kategoriResponse = Http::withHeaders([
-            'apikey' => $this->supabaseKey,
-            'Authorization' => 'Bearer ' . $this->supabaseKey,
-        ])->get(env('SUPABASE_URL') . '/rest/v1/kategori_buku');
-
-        $kategori = $kategoriResponse->json() ?? [];
+        $kategori = Http::withHeaders($this->headers())
+            ->get(env('SUPABASE_URL') . '/rest/v1/kategori_buku')
+            ->json();
 
         return view('buku.tambah', compact('kategori'));
     }
 
-    /**
-     * 🔹 Simpan Buku Baru
-     */
     public function store(Request $request)
     {
-        if (!session()->has('admin')) {
-            return redirect('/')->with('error', 'Akses ditolak!');
-        }
+        if (!session()->has('admin')) return redirect('/');
 
         $request->validate([
             'judul' => 'required',
@@ -104,14 +150,13 @@ class BukuController extends Controller
             'penerbit' => 'required',
             'tahun_terbit' => 'required',
             'deskripsi' => 'required',
-            'gambar' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'id_kategori' => 'required',
+            'gambar' => 'nullable|image|max:4096'
         ]);
 
-        $namaGambar = null;
+        $gambarUrl = null;
         if ($request->hasFile('gambar')) {
-            $file = $request->file('gambar');
-            $namaGambar = time() . '.' . $file->getClientOriginalExtension();
-            $file->move(public_path('img/buku'), $namaGambar);
+            $gambarUrl = $this->uploadToSupabase($request->file('gambar'));
         }
 
         $data = [
@@ -121,62 +166,42 @@ class BukuController extends Controller
             'penerbit' => $request->penerbit,
             'tahun_terbit' => $request->tahun_terbit,
             'deskripsi' => $request->deskripsi,
-            'gambar' => $namaGambar,
+            'id_kategori' => $request->id_kategori,
+            'gambar' => $gambarUrl
         ];
 
-        $response = Http::withHeaders([
-            'apikey' => $this->supabaseKey,
-            'Authorization' => 'Bearer ' . $this->supabaseKey,
-            'Content-Type' => 'application/json',
-            'Prefer' => 'return=representation'
-        ])->post($this->supabaseUrl, $data);
+        $save = Http::withHeaders($this->headers())
+            ->post($this->url, $data);
 
-        if ($response->successful()) {
-            Alert::success('Berhasil', 'Data buku berhasil ditambahkan!');
-            return redirect('/buku');
+        if ($save->successful()) {
+            Alert::success('Berhasil', 'Buku berhasil ditambahkan!');
+            return redirect()->route('buku.index');
         }
 
-        return back()->with('error', 'Gagal menambahkan buku. ' . $response->body());
+        return back()->with('error', $save->body());
     }
 
-    /**
-     * 🔹 Form Edit Buku
-     */
     public function edit($id)
     {
-        if (!session()->has('admin')) {
-            return redirect('/')->with('error', 'Akses ditolak!');
-        }
+        if (!session()->has('admin')) return redirect('/');
 
-        $bukuResponse = Http::withHeaders([
-            'apikey' => $this->supabaseKey,
-            'Authorization' => 'Bearer ' . $this->supabaseKey,
-        ])->get($this->supabaseUrl . '?id=eq.' . $id);
+        $data = Http::withHeaders($this->headers())
+            ->get($this->url . "?id=eq.$id&select=*,kategori_buku(nama)")
+            ->json();
 
-        $data = $bukuResponse->json();
-        if (!$bukuResponse->successful() || empty($data)) {
-            abort(404, 'Buku tidak ditemukan');
-        }
         $buku = (object) $data[0];
+        $buku->kategori_nama = $buku->kategori_buku['nama'] ?? '-';
 
-        $kategoriResponse = Http::withHeaders([
-            'apikey' => $this->supabaseKey,
-            'Authorization' => 'Bearer ' . $this->supabaseKey,
-        ])->get(env('SUPABASE_URL') . '/rest/v1/kategori_buku');
-
-        $kategori = $kategoriResponse->json() ?? [];
+        $kategori = Http::withHeaders($this->headers())
+            ->get(env('SUPABASE_URL') . '/rest/v1/kategori_buku')
+            ->json();
 
         return view('buku.edit', compact('buku', 'kategori'));
     }
 
-    /**
-     * 🔹 Update Buku
-     */
     public function update(Request $request, $id)
     {
-        if (!session()->has('admin')) {
-            return redirect('/')->with('error', 'Akses ditolak!');
-        }
+        if (!session()->has('admin')) return redirect('/');
 
         $request->validate([
             'judul' => 'required',
@@ -185,25 +210,20 @@ class BukuController extends Controller
             'penerbit' => 'required',
             'tahun_terbit' => 'required',
             'deskripsi' => 'required',
-            'gambar' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'id_kategori' => 'required',
+            'gambar' => 'nullable|image|max:4096'
         ]);
 
-        $oldDataResponse = Http::withHeaders([
-            'apikey' => $this->supabaseKey,
-            'Authorization' => 'Bearer ' . $this->supabaseKey,
-        ])->get($this->supabaseUrl . '?id=eq.' . $id);
+        $old = Http::withHeaders($this->headers())
+            ->get($this->url . "?id=eq.$id")
+            ->json();
 
-        $oldData = $oldDataResponse->json();
-        $namaGambar = $oldData[0]['gambar'] ?? null;
+        $oldImage = $old[0]['gambar'];
 
         if ($request->hasFile('gambar')) {
-            if ($namaGambar && file_exists(public_path('img/buku/' . $namaGambar))) {
-                unlink(public_path('img/buku/' . $namaGambar));
-            }
-
-            $file = $request->file('gambar');
-            $namaGambar = time() . '.' . $file->getClientOriginalExtension();
-            $file->move(public_path('img/buku'), $namaGambar);
+            $gambarUrl = $this->uploadToSupabase($request->file('gambar'));
+        } else {
+            $gambarUrl = $oldImage;
         }
 
         $data = [
@@ -213,77 +233,43 @@ class BukuController extends Controller
             'penerbit' => $request->penerbit,
             'tahun_terbit' => $request->tahun_terbit,
             'deskripsi' => $request->deskripsi,
-            'gambar' => $namaGambar,
+            'id_kategori' => $request->id_kategori,
+            'gambar' => $gambarUrl
         ];
 
-        $response = Http::withHeaders([
-            'apikey' => $this->supabaseKey,
-            'Authorization' => 'Bearer ' . $this->supabaseKey,
-            'Content-Type' => 'application/json'
-        ])->patch($this->supabaseUrl . '?id=eq.' . $id, $data);
+        $update = Http::withHeaders($this->headers())
+            ->patch($this->url . "?id=eq.$id", $data);
 
-        if ($response->successful()) {
+        if ($update->successful()) {
             Alert::success('Berhasil', 'Data buku berhasil diperbarui!');
-            return redirect('/buku');
-        }
-
-        return back()->with('error', 'Gagal memperbarui buku. ' . $response->body());
-    }
-
-    /**
-     * 🔹 Hapus Buku
-     */
-    public function destroy($id)
-    {
-        if (!session()->has('admin')) {
-            return redirect('/')->with('error', 'Akses ditolak!');
-        }
-
-        $getResponse = Http::withHeaders([
-            'apikey' => $this->supabaseKey,
-            'Authorization' => 'Bearer ' . $this->supabaseKey,
-        ])->get($this->supabaseUrl . '?id=eq.' . $id);
-
-        $buku = $getResponse->json();
-        if (empty($buku)) {
-            return redirect()->route('buku.index')->with('error', 'Data buku tidak ditemukan.');
-        }
-
-        $namaGambar = $buku[0]['gambar'] ?? null;
-
-        $deleteResponse = Http::withHeaders([
-            'apikey' => $this->supabaseKey,
-            'Authorization' => 'Bearer ' . $this->supabaseKey,
-        ])->delete($this->supabaseUrl . '?id=eq.' . $id);
-
-        if ($deleteResponse->successful()) {
-            if ($namaGambar && File::exists(public_path('img/buku/' . $namaGambar))) {
-                File::delete(public_path('img/buku/' . $namaGambar));
-            }
-
-            Alert::success('Berhasil', 'Buku berhasil dihapus!');
             return redirect()->route('buku.index');
         }
 
-        return redirect()->route('buku.index')->with('error', 'Gagal menghapus buku. ' . $deleteResponse->body());
+        return back()->with('error', $update->body());
     }
 
-    /**
-     * 🔹 Detail Buku
-     */
-    public function show($id)
+    public function destroy($id)
     {
-        $response = Http::withHeaders([
-            'apikey' => $this->supabaseKey,
-            'Authorization' => 'Bearer ' . $this->supabaseKey,
-        ])->get($this->supabaseUrl . '?id=eq.' . $id);
+        if (!session()->has('admin')) return redirect('/');
 
-        $data = $response->json();
-        if (!$response->successful() || empty($data)) {
-            abort(404, 'Buku tidak ditemukan');
+        $delete = Http::withHeaders($this->headers())
+            ->delete($this->url . "?id=eq.$id");
+
+        if ($delete->successful()) {
+            Alert::success('Berhasil', 'Buku berhasil dihapus!');
         }
 
+        return redirect()->route('buku.index');
+    }
+
+    public function show($id)
+    {
+        $data = Http::withHeaders($this->headers())
+            ->get($this->url . "?id=eq.$id&select=*,kategori_buku(nama)")
+            ->json();
+
         $buku = (object) $data[0];
+        $buku->kategori_nama = $buku->kategori_buku['nama'] ?? '-';
 
         return view('buku.detail', compact('buku'));
     }

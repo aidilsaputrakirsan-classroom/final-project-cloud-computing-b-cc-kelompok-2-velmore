@@ -1,4 +1,5 @@
 <!-- Sidebar Admin -->
+
 <div class="menu-section">
   <div class="menu-section-title">Manajemen</div>
 
@@ -17,6 +18,11 @@
   <a href="/buku" class="{{ request()->is('buku') ? 'active' : '' }}">
     <i class="fa fa-book"></i> <span>Data Buku</span>
   </a>
+
+  {{-- ⭐ MENU KATEGORI BUKU --}}
+  <a href="/kategori" class="{{ request()->is('kategori*') ? 'active' : '' }}">
+    <i class="fa fa-tags"></i> <span>Kategori Buku</span>
+  </a>
 </div>
 
 <div class="menu-section">
@@ -28,9 +34,5 @@
 
   <a href="/pengembalian" class="{{ request()->is('pengembalian') ? 'active' : '' }}">
     <i class="fa fa-undo"></i> <span>Pengembalian</span>
-  </a>
-
-  <a href="/riwayat" class="{{ request()->is('riwayat') ? 'active' : '' }}">
-    <i class="fa fa-history"></i> <span>Riwayat</span>
   </a>
 </div>
