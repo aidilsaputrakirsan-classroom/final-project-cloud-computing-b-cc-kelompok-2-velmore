@@ -250,41 +250,86 @@ body.dark-mode .form-check-input:checked::after {
   </div>
 
   {{-- 🔍 Form Pencarian Buku --}}
-  <form method="GET" action="{{ route('dashboard.user') }}" class="mb-4">
-    <div class="row g-2 align-items-center">
-      <div class="col-md-4 col-sm-6">
-        <input type="text" name="search" class="form-control input-theme"
-              placeholder="Cari berdasarkan judul buku..."
-              value="{{ request('search') }}">
-      </div>
-      <div class="col-md-3 col-sm-6">
-        <select name="status" class="form-select input-theme">
-          <option value="">Semua Status</option>
-          <option value="Tersedia" {{ request('status')=='Tersedia'?'selected':'' }}>Tersedia</option>
-          <option value="Dipinjam" {{ request('status')=='Dipinjam'?'selected':'' }}>Dipinjam</option>
-        </select>
-      </div>
-      <div class="col-md-2">
-        <button type="submit" class="btn btn-accent w-100">
-          <i class="fa fa-search me-1"></i> Cari
-        </button>
-      </div>
+<form method="GET" action="{{ route('dashboard.user') }}" class="mb-4">
+  <div class="row g-2 align-items-center">
+
+    {{-- Cari Judul --}}
+    <div class="col-md-4 col-sm-6">
+      <input type="text" name="search" class="form-control input-theme"
+            placeholder="Cari berdasarkan judul buku..."
+            value="{{ request('search') }}">
     </div>
-  </form>
-  @endif
 
-  {{-- === Tampilkan Buku === --}}
-  @if($tab === 'peminjaman')
-  <div class="row g-4">
-    @php
-    $search = strtolower(request('search', ''));
-    $statusFilter = request('status', '');
+    {{-- Filter Status --}}
+    <div class="col-md-3 col-sm-6">
+      <select name="status" class="form-select input-theme">
+        <option value="">Semua Status</option>
+        <option value="Tersedia" {{ request('status')=='Tersedia'?'selected':'' }}>Tersedia</option>
+        <option value="Dipinjam" {{ request('status')=='Dipinjam'?'selected':'' }}>Dipinjam</option>
+      </select>
+    </div>
 
-    // 🔹 Filter berdasarkan judul dan status
-    $filteredBuku = collect($bukuList)->filter(function($buku) use ($search, $statusFilter) {
+    {{-- Filter Kategori --}}
+    <div class="col-md-3 col-sm-6">
+      <select name="kategori" class="form-select input-theme">
+        <option value="">Semua Kategori</option>
+
+        @php
+            // Ambil nama kategori dari berbagai kemungkinan field
+            $kategoriList = collect($bukuList)
+                ->map(function($buku) {
+                    return $buku['kategori']
+                        ?? ($buku['kategori_nama'] ?? null)
+                        ?? ($buku['kategori_buku']['nama'] ?? null);
+                })
+                ->filter()   // buang null / kosong
+                ->unique()   // hilangkan duplikat
+                ->values();
+        @endphp
+
+        @foreach($kategoriList as $kat)
+          <option value="{{ $kat }}" {{ request('kategori') == $kat ? 'selected' : '' }}>
+            {{ $kat }}
+          </option>
+        @endforeach
+      </select>
+    </div>
+
+    <div class="col-md-2">
+      <button type="submit" class="btn btn-accent w-100">
+        <i class="fa fa-search me-1"></i> Cari
+      </button>
+    </div>
+
+  </div>
+</form>
+@endif
+
+{{-- === Tampilkan Buku === --}}
+@if($tab === 'peminjaman')
+<div class="row g-4">
+  @php
+    $search         = strtolower(request('search', ''));
+    $statusFilter   = request('status', '');
+    $kategoriFilter = request('kategori', '');
+
+    // 🔹 Filter berdasarkan judul, status, dan kategori
+    $filteredBuku = collect($bukuList)->filter(function($buku) use ($search, $statusFilter, $kategoriFilter) {
+
+        // Nama kategori yang dipakai untuk filter
+        $kategoriNama = $buku['kategori']
+            ?? ($buku['kategori_nama'] ?? null)
+            ?? ($buku['kategori_buku']['nama'] ?? null);
+
         $judulMatch = !$search || str_contains(strtolower($buku['judul']), $search);
-        $statusMatch = !$statusFilter || ($buku['status'] ?? 'Tersedia') === $statusFilter;
-        return $judulMatch && $statusMatch;
+
+        $statusMatch = !$statusFilter
+            || ($buku['status'] ?? 'Tersedia') === $statusFilter;
+
+        $kategoriMatch = !$kategoriFilter
+            || (strtolower($kategoriNama ?? '') === strtolower($kategoriFilter));
+
+        return $judulMatch && $statusMatch && $kategoriMatch;
     });
 
     // 🔹 Urutkan: buku "Tersedia" tampil dulu, "Dipinjam" di akhir
@@ -294,46 +339,70 @@ body.dark-mode .form-check-input:checked::after {
   @endphp
 
   @forelse($sortedBuku as $buku)
-      <div class="col-lg-3 col-md-4 col-sm-6">
-        <div class="card card-theme h-100 text-center">
-          <div class="card-body d-flex flex-column">
-            <div class="mb-3" style="height:180px;display:flex;align-items:center;justify-content:center;">
-              <img src="{{ asset('img/buku/' . ($buku['gambar'] ?? 'noImage.jpg')) }}" 
-                   class="img-fluid rounded" style="max-height:100%;object-fit:contain;"
-                   alt="{{ $buku['judul'] }}" loading="lazy">
-            </div>
-            <h5 class="fw-bold mb-2">{{ $buku['judul'] }}</h5>
-            <p class="text-muted small mb-2">
-              <i class="fa fa-user me-1"></i>{{ $buku['pengarang'] ?? 'Tidak diketahui' }}
-            </p>
-            <span class="badge {{ ($buku['status'] ?? 'Tersedia')==='Tersedia'?'bg-success':'bg-danger' }} mb-3">
-              {{ $buku['status'] ?? 'Tersedia' }}
-            </span>
-            <div class="mt-auto">
-              @if(($buku['status'] ?? 'Tersedia')==='Tersedia')
-                <button class="btn btn-accent w-100" onclick="openModal({{ $buku['id'] }}, '{{ $buku['judul'] }}')">
-                  <i class="fa fa-book me-2"></i>Pinjam Buku
-                </button>
-              @else
-                <button class="btn btn-secondary w-100" disabled>
-                  <i class="fa fa-lock me-2"></i>Tidak Tersedia
-                </button>
-              @endif
-            </div>
+    @php
+      $kategoriNama = $buku['kategori']
+          ?? ($buku['kategori_nama'] ?? null)
+          ?? ($buku['kategori_buku']['nama'] ?? null);
+    @endphp
+
+    <div class="col-lg-3 col-md-4 col-sm-6">
+      <div class="card card-theme h-100 text-center">
+        <div class="card-body d-flex flex-column">
+
+          {{-- Gambar --}}
+          <div class="mb-3" style="height:180px;display:flex;align-items:center;justify-content:center;">
+            <img src="{{ asset('img/buku/' . ($buku['gambar'] ?? 'noImage.jpg')) }}"
+                 class="img-fluid rounded"
+                 style="max-height:100%;object-fit:contain;"
+                 alt="{{ $buku['judul'] }}" loading="lazy">
           </div>
+
+          {{-- Judul --}}
+          <h5 class="fw-bold mb-2">{{ $buku['judul'] }}</h5>
+
+          {{-- Pengarang --}}
+          <p class="text-muted small mb-2">
+            <i class="fa fa-user me-1"></i>{{ $buku['pengarang'] ?? 'Tidak diketahui' }}
+          </p>
+
+          {{-- Kategori --}}
+          <p class="text-muted small mb-2">
+            <i class="fa fa-tags me-1"></i>{{ $kategoriNama ?? 'Tidak ada kategori' }}
+          </p>
+
+          {{-- Status --}}
+          <span class="badge {{ ($buku['status'] ?? 'Tersedia')==='Tersedia'?'bg-success':'bg-danger' }} mb-3">
+            {{ $buku['status'] ?? 'Tersedia' }}
+          </span>
+
+          {{-- Tombol --}}
+          <div class="mt-auto">
+            @if(($buku['status'] ?? 'Tersedia')==='Tersedia')
+              <button class="btn btn-accent w-100"
+                      onclick="openModal({{ $buku['id'] }}, '{{ $buku['judul'] }}')">
+                <i class="fa fa-book me-2"></i>Pinjam Buku
+              </button>
+            @else
+              <button class="btn btn-secondary w-100" disabled>
+                <i class="fa fa-lock me-2"></i>Tidak Tersedia
+              </button>
+            @endif
+          </div>
+
         </div>
       </div>
-    @empty
-      <div class="col-12">
-        <div class="alert alert-info text-center py-5">
-          <i class="fa fa-info-circle fa-3x mb-3 d-block"></i>
-          <h5>Belum Ada Buku Tersedia</h5>
-          <p class="mb-0">Saat ini belum ada buku yang dapat dipinjam. Silakan cek kembali nanti.</p>
-        </div>
+    </div>
+  @empty
+    <div class="col-12">
+      <div class="alert alert-info text-center py-5">
+        <i class="fa fa-info-circle fa-3x mb-3 d-block"></i>
+        <h5>Belum Ada Buku Tersedia</h5>
+        <p class="mb-0">Saat ini belum ada buku yang dapat dipinjam. Silakan cek kembali nanti.</p>
       </div>
-    @endforelse
-  </div>
-  @endif
+    </div>
+  @endforelse
+</div>
+@endif
 </div>
 
 {{-- === Custom Modal === --}}
