@@ -38,7 +38,7 @@ class PeminjamanController extends Controller
 
         // Ambil semua data buku
         $bukuResponse = Http::withHeaders($headers)
-            ->get($this->supabaseUrl . '/buku?select=*');
+            ->get($this->supabaseUrl . '/buku?select=*,kategori_buku(nama)');
         $bukuList = $bukuResponse->json() ?? [];
 
         // Ambil semua data peminjaman user DENGAN RELASI BUKU
