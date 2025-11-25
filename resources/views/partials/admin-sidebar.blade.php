@@ -23,6 +23,11 @@
   <a href="/kategori" class="{{ request()->is('kategori*') ? 'active' : '' }}">
     <i class="fa fa-tags"></i> <span>Kategori Buku</span>
   </a>
+
+  {{-- ⭐ MENU ACTIVITY LOG (BARU) --}}
+  <a href="/admin/activity-log" class="{{ request()->is('admin/activity-log') ? 'active' : '' }}">
+    <i class="fa fa-list"></i> <span>Activity Log</span>
+  </a>
 </div>
 
 <div class="menu-section">
