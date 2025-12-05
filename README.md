@@ -22,7 +22,26 @@ Sistem ini memudahkan admin dalam pencatatan data perpustakaan serta memberikan 
 - [Lisensi](#lisensi)
 
 ## Fitur Utama
+1. **Login Admin & User**  
+   Login terpisah agar keamanan data tetap terjaga.  
 
+2. **Dashboard Informasi**  
+   Menampilkan ringkasan jumlah total buku, anggota, dan transaksi peminjaman/pengembalian.  
+
+3. **Manajemen Data Buku (CRUD)**  
+   Admin dapat menambah, melihat, mengedit, dan menghapus data buku (judul, penulis, tahun terbit, kategori, status).  
+
+4. **Manajemen Data Anggota (CRUD)**  
+   Admin dapat mengelola data anggota (nama, kelas/jabatan, kontak, dan status).  
+
+5. **Peminjaman & Pengembalian Buku**  
+   Fitur mencatat transaksi peminjaman dan pengembalian buku oleh anggota.  
+
+6. **Riwayat Peminjaman**  
+   Menampilkan catatan lengkap transaksi peminjaman dan pengembalian buku.  
+
+7. **Pencarian Buku**  
+   Pengguna dapat mencari buku berdasarkan judul, penulis, atau tahun terbit.
 
 
 ## Tech Stack
@@ -53,7 +72,6 @@ Sistem ini memudahkan admin dalam pencatatan data perpustakaan serta memberikan 
 - **Spatie Ignition** - Enhanced error pages
 
 ## Persyaratan Sistem
-
 - PHP >= 8.2
 - MySQL >= 5.7 atau MariaDB >= 10.3
 - Composer
@@ -75,8 +93,8 @@ Sistem ini memudahkan admin dalam pencatatan data perpustakaan serta memberikan 
 ### 1. Clone Repository
 
 ```bash
-git clone https://github.com/aidilsaputrakirsan/sitasi-itk.git
-cd sitasi-itk
+git clone https://github.com/aidilsaputrakirsan-classroom/final-project-cloud-computing-b-cc-kelompok-2-velmore.git
+cd velmore
 ```
 
 ### 2. Install Dependencies
@@ -84,6 +102,8 @@ cd sitasi-itk
 ```bash
 # Install PHP dependencies
 composer install
+
+composer require realrashid/sweet-alert
 
 # Install Node dependencies
 npm install
@@ -103,14 +123,13 @@ php artisan key:generate
 
 Edit file `.env` dan sesuaikan konfigurasi database:
 
-```env
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=sitasiitk
-DB_USERNAME=root
-DB_PASSWORD=your_password
-```
+# ======================================
+# 🗃 KONFIGURASI DATABASE (SUPABASE REST)
+# ======================================
+SUPABASE_URL=https://seabqhejluhgdzrpmbvh.supabase.co
+SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNlYWJxaGVqbHVoZ2R6cnBtYnZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE1Mjk5MzksImV4cCI6MjA3NzEwNTkzOX0.gwKXaGURsacidesKniihyxA4SRGGVLH9foOqbfcODig   
+SUPABASE_TABLE=buku
+
 
 ### 5. Migrasi Database
 
@@ -155,25 +174,25 @@ Aplikasi akan berjalan di `http://localhost:8000`
 Edit konfigurasi email di file `.env`:
 
 ```env
-MAIL_MAILER=smtp
-MAIL_HOST=smtp.gmail.com
-MAIL_PORT=587
-MAIL_USERNAME=your-email@gmail.com
-MAIL_PASSWORD=your-app-password
-MAIL_ENCRYPTION=tls
-MAIL_FROM_ADDRESS=noreply@sitasi-itk.ac.id
-MAIL_FROM_NAME="SITASI ITK"
-```
+# ======================================
+# MAIL / QUEUE (abaikan untuk sekarang)
+# ======================================
+MAIL_MAILER=log
+QUEUE_CONNECTION=sync
+
+SESSION_DRIVER=file
+SESSION_LIFETIME=120
 
 ### File Storage
 
 Untuk menggunakan AWS S3 storage, konfigurasi:
 
 ```env
-AWS_ACCESS_KEY_ID=your-access-key
-AWS_SECRET_ACCESS_KEY=your-secret-key
-AWS_DEFAULT_REGION=ap-southeast-1
-AWS_BUCKET=your-bucket-name
+APP_NAME=Laravel
+APP_ENV=local
+APP_KEY=base64:uLZg9WGJqXwnNqVA2Oc6Up+2i7cXNcGU9JALGgTOAuo=
+APP_DEBUG=true
+APP_URL=APP_URL=https://verly.akhzafachrozy.my.id
 ```
 
 ## Role & Permissions
@@ -182,196 +201,191 @@ Sistem menggunakan 4 role utama dengan permission berbeda:
 
 | Role | Deskripsi |
 |------|-----------|
-| **Mahasiswa** | Mahasiswa yang mengerjakan tugas akhir |
-| **Dosen** | Dosen pembimbing dan penguji |
-| **Tendik** | Tenaga Kependidikan (Admin) |
-| **Koorpro** | Koordinator Program Studi |
+| **Penjaga** | Pemberi pinjaman buku (admin) |
+| **Siswa** | Peminjam (user) |
 
-## Fitur Berdasarkan Role
+# Fitur Berdasarkan Role – VERLY Library System
 
-### Mahasiswa
-- 📝 Pengajuan judul tugas akhir
-- 📚 Pencatatan bimbingan dengan dosen
-- 📅 Pendaftaran seminar proposal
-- 🎓 Pendaftaran sidang tugas akhir
-- 📖 Akses katalog TA
-- 📋 Lihat referensi dan prosedur
-- 👤 Manajemen profil
+## 👑 Admin (Penjaga Perpustakaan)
 
-### Dosen
-- 👥 Lihat daftar mahasiswa bimbingan
-- ✅ Validasi dan approve bimbingan
-- 📊 Entry penilaian sempro dan sidang
-- 📑 Lihat jadwal sempro dan sidang
-- 📖 Akses dan kontribusi katalog TA
-- 🔍 Monitoring progress mahasiswa
+Admin memiliki akses penuh untuk mengelola seluruh aktivitas di sistem.
 
-### Tendik (Admin)
-- 👨‍🏫 **Data Master**
-  - CRUD data dosen
-  - CRUD data mahasiswa
-  - Import data via Excel
-- 📅 **Penjadwalan**
-  - Manajemen periode akademik
-  - Penjadwalan seminar proposal
-  - Penjadwalan sidang tugas akhir
-  - Monitoring real-time
-- 📚 **Konten**
-  - Manajemen katalog TA
-  - Manajemen referensi
-  - Manajemen prosedur
-- 📄 **Dokumentasi**
-  - Generate berbagai form dan surat
-  - Export data Excel/PDF
+### Manajemen
+- 📊 **Dashboard**  
+  Melihat statistik peminjaman, jumlah buku, dan aktivitas terbaru pengguna.
 
-### Koorpro (Koordinator Program Studi)
-- Semua akses yang dimiliki Tendik
-- 📊 Dashboard analytics
-- 📈 Laporan dan statistik
-- 🎯 Monitoring keseluruhan proses TA
+- ➕ **Tambah Pengguna**  
+  Membuat akun peminjam atau admin baru.
 
-## Generate PDF
+- 👥 **Data Pengguna**  
+  Mengelola detail pengguna seperti nama, email, role.
 
-Aplikasi dapat generate berbagai dokumen PDF:
+### Buku & Kategori
+- 📚 **Data Buku**  
+  Menambah, mengedit, dan menghapus buku serta mengelola stok.
 
-### Form Tugas Akhir
-- **Form TA-001** - Form Pengajuan Judul TA
-- **Form TA-002** - Form Persetujuan Judul TA
-- **Form TA-006** - Form Permohonan Seminar Proposal
-- **Form TA-007** - Form Permohonan Sidang TA
-- **Form TA-008** - Form Lembar Konsultasi
+- 🏷️ **Kategori Buku**  
+  Mengelompokkan buku berdasarkan kategori tertentu.
 
-### Dokumen Jadwal
-- **Jadwal Seminar Proposal** - Jadwal lengkap sempro per periode
-- **Jadwal Sidang TA** - Jadwal lengkap sidang per periode
+### Transaksi
+- 🔄 **Transaksi**
+  Mengelola seluruh proses peminjaman dan pengembalian.
 
-### Berita Acara
-- **Berita Acara Seminar Proposal**
-- **Berita Acara Sidang Tugas Akhir**
-- **Lembar Persetujuan Revisi**
-- **Surat Kesanggupan Revisi**
+- 📖 **Peminjaman**  
+  Memproses peminjaman buku oleh pengguna.
 
-## Import Data
+- 📦 **Pengembalian**  
+  Mencatat pengembalian buku dan menghitung denda jika ada keterlambatan.
 
-### Template Excel
+### Monitoring
+- 📅 **Daftar Peminjaman Aktif**  
+  Memantau seluruh buku yang masih dipinjam:  
+  - Judul buku  
+  - Nama peminjam  
+  - Kontak  
+  - Tanggal pinjam  
+  - Tanggal kembali  
+  - Status waktu (on time / terlambat)
 
-Aplikasi menyediakan template Excel untuk import data:
+### Sistem
+- 🚪 **Logout**
 
-1. **Dosen Template.xlsx** - Template import data dosen
-2. **Mahasiswa Template.xlsx** - Template import data mahasiswa
-3. **Katalog Template.xlsx** - Template import data katalog TA
+---
 
-Template dapat diunduh dari folder `/public/` atau melalui menu import di aplikasi.
+## 👤 User (Peminjam/Siswa)
 
-### Cara Import
+User hanya dapat melakukan aktivitas yang berkaitan langsung dengan peminjaman buku.
 
-1. Download template yang sesuai
-2. Isi data sesuai format template
-3. Upload file Excel melalui halaman import
-4. Sistem akan validasi dan import data secara otomatis
+- 📚 **Lihat Katalog Buku**  
+  Menjelajahi daftar buku yang tersedia.
+
+- 📖 **Meminjam Buku**  
+  Mengajukan peminjaman sesuai ketersediaan.
+
+- 📦 **Mengembalikan Buku**  
+  Mengembalikan buku yang dipinjam melalui sistem.
+
+- 🔍 **Riwayat & Status Peminjaman**  
+  Melihat:
+  - Buku yang sedang dipinjam  
+  - Riwayat peminjaman  
+  - Status waktu (berapa hari tersisa atau terlambat)
+
+---
 
 ## Screenshot
 
-### 1. Halaman Login
-![Halaman Login](public/images/screenshots/01-login.png)
+### 1. Halaman Login 
+![Halaman Login](public/img/final/login.png)
 *Halaman login dengan form email dan password*
 
-### 2. Dashboard Mahasiswa
-![Dashboard Mahasiswa](public/images/screenshots/02-dashboard-mahasiswa.png)
-*Dashboard mahasiswa dengan ringkasan status TA*
+### 2. Dashboard Admin
+![Dashboard Admin](public/img/final/dashboard-admin.png)
+*Dashboard Admin untuk melihat statistik peminjaman, jumlah buku, dan aktivitas terbaru pengguna*
 
-### 3. Pengajuan Judul TA
-![Pengajuan Judul TA](public/images/screenshots/03-pengajuan-judul-ta.png)
-*Form pengajuan judul tugas akhir*
+### 3. Halaman Tambah Pengguna (Admin)
+![Halaman Tambah Pengguna](public/img/final/tambah-user.png)
+*Halaman untuk membuat akun peminjam atau admin baru*
 
-### 4. Halaman Bimbingan
-![Halaman Bimbingan](public/images/screenshots/04-halaman-bimbingan.png)
-*Halaman pencatatan bimbingan dengan dosen*
+### 4. Halaman Data Pengguna (Admin)
+![Halaman Data Pengguna Pengguna](public/img/final/data-user.png)
+*Halaman untuk mengelola detail pengguna seperti nama, email, role*
 
-### 5. Dashboard Dosen
-![Dashboard Dosen](public/images/screenshots/05-dashboard-dosen.png)
-*Dashboard dosen dengan daftar mahasiswa bimbingan*
+### 5. Halaman Data Buku (Admin)
+![Halaman Data Buku](public/img/final/data-buku.png)
+*Halaman untuk menambah, mengedit, dan menghapus buku serta mengelola stok*
 
-### 6. Penjadwalan Sempro
-![Penjadwalan Sempro](public/images/screenshots/06-penjadwalan-sempro.png)
-*Halaman penjadwalan seminar proposal*
+### 6. Halaman Kategori (Admin)
+![Halaman Kategori](public/img/final/data-buku.png)
+*Halaman untuk mengelompokkan buku berdasarkan kategori tertentu*
 
-### 7. Data Mahasiswa (Admin)
-![Data Mahasiswa Admin](public/images/screenshots/07-data-mahasiswa-admin.png)
-*Halaman manajemen data mahasiswa dengan fitur import*
+### 7. Halaman Peminjaman (Admin)
+![Halaman Peminjaman](public/img/final/peminjaman.png)
+*Halaman untuk melihat pengajuan peminjaman sesuai ketersediaan*
 
-### 8. Generate PDF
-![Generate PDF](public/images/screenshots/08-generate-pdf.png)
-*Contoh dokumen PDF yang dihasilkan*
+### 8. Halaman Pengembalian (Admin)
+![Halaman Pengembalian](public/img/final/pengembalian.png)
+*Halaman untuk pengembalian buku yang dipinjam melalui sistem*
 
-### 9. Katalog TA
-![Katalog TA](public/images/screenshots/09-katalog-ta.png)
-*Halaman katalog tugas akhir*
+### 10. Dashboard User
+![Dashboard User](public/img/final/dashboard-user.png)
+*Halaman untuk menjelajahi daftar buku yang tersedia*
+
+### 11. Halaman Pengembalian (User)
+![Halaman Pengembalian](public/img/final/pengembalian-user.png)
+*Halaman untuk mengembalikan buku yang dipinjam melalui sistem*
+
+### 12. Halaman Riwayat (User)
+![Halaman Riwayat](public/img/final/riwayat.png)
+*Halaman untuk melihat buku yang sedang dipinjam, riwayat peminjaman, status waktu (berapa hari tersisa atau terlambat)*
 
 ## Struktur Database
 
 ### Tabel Utama
 
-- **users** - Data pengguna sistem (dengan photo dan signature)
-- **dosens** - Data dosen (termasuk dosen eksternal)
-- **mahasiswas** - Data mahasiswa
-- **pengajuan_tas** - Pengajuan tugas akhir
-- **bimbingans** - Catatan bimbingan (dengan status approval)
-- **sempros** - Data seminar proposal (dengan hasil_sempro)
-- **sidang_tas** - Data sidang tugas akhir (dengan tracking revisi)
-- **periodes** - Periode akademik (TA dan Sempro)
-- **jadwal_sempros** - Jadwal seminar proposal
-- **jadwal_tas** - Jadwal sidang TA
-- **penilaian_sempros** - Nilai seminar proposal
-- **penilaian_sidang_tas** - Nilai sidang TA
-- **katalogs** - Katalog tugas akhir (dengan approval system)
-- **referensis** - Referensi untuk mahasiswa
-- **prosedurs** - Prosedur dan panduan
-- **notifikasis** - Notifikasi real-time untuk users
-- **riwayat_pengajuans** - Riwayat perubahan pengajuan
-- **riwayat_pendaftaran_sempros** - Riwayat pendaftaran sempro
-- **riwayat_pendaftaran_sidang_tas** - Riwayat pendaftaran sidang
+- **activity_logs** – Catatan aktivitas pengguna sistem, meliputi aksi yang dilakukan, alamat IP, user agent, serta waktu pencatatan.
 
-### Relasi Database
+- **kategori_buku** – Data kategori buku yang digunakan untuk mengelompokkan koleksi perpustakaan.
 
-```
-users (1) ─── (1) mahasiswas
-users (1) ─── (1) dosens
+- **buku** – Data lengkap buku, mencakup judul, pengarang, penerbit, deskripsi, tahun terbit, kode buku, status ketersediaan, dan keterhubungan dengan kategori buku.
+- **Peminjaman** – Judul Buku	,Peminjam	Kontak,	Tanggal Pinjam,	Tanggal Kembali,	Sisa Waktu.
 
-mahasiswas (1) ─── (n) pengajuan_tas
-pengajuan_tas (1) ─── (n) bimbingans
-pengajuan_tas (1) ─── (1) sempros
-pengajuan_tas (1) ─── (1) sidang_tas
 
-periodes (1) ─── (n) jadwal_sempros
-periodes (1) ─── (n) jadwal_tas
+## Relasi Database
 
-sempros (1) ─── (n) penilaian_sempros
-sidang_tas (1) ─── (n) penilaian_sidang_tas
-```
+### Hubungan Antar Tabel
+
+- **kategori_buku (1) → (n) buku**  
+  Satu kategori dapat memiliki banyak buku.
+
+- **buku (1) → (n) activity_logs**  
+  Setiap aksi pada buku (melihat detail, meminjam, mengembalikan) tercatat dalam activity_logs.
+
+### Alur Relasi (Dari Peminjaman Sampai Pengembalian)
+
+1. **User melakukan aksi**  
+   → dicatat dalam **activity_logs.action**
+
+2. **User memilih buku**  
+   → data diambil dari tabel **buku**
+
+3. **Status buku berubah**  
+   - dari **Tersedia → Dipinjam**
+   - dari **Dipinjam → Tersedia**
+
+4. **Perubahan status tercatat di activity_logs**  
+   → log berisi user_id, action, ip_address, user_agent, dan timestamp
+
+5. **Buku selalu terhubung ke kategori**  
+   → lewat **buku.id_kategori → kategori_buku.id**
+
 
 ## Arsitektur & Komponen
 
 ### Arsitektur Aplikasi
 
-Aplikasi ini menggunakan **Livewire-heavy architecture** dengan 34+ komponen interaktif yang menggantikan kebutuhan AJAX tradisional:
+Aplikasi ini dibangun dengan arsitektur yang sederhana namun modular, memanfaatkan Supabase sebagai fondasi utama untuk **database PostgreSQL**, **autentikasi**, dan **storage**. Setiap modul dipisahkan berdasarkan fungsi agar mudah dikembangkan dan dipelihara.
 
-- **Controllers (12)** - Business logic dan routing
-- **Livewire Components (34+)** - Full-stack reactive components
-- **Models (19)** - Eloquent ORM models dengan relationships
-- **Services** - PdfService untuk centralized PDF generation
-- **Traits** - Reusable logic (NotifikasiTraits, UpdateDeleteTraits, PeriodeTraits)
-- **Imports/Exports** - Excel handling untuk batch operations
+- **Controllers** – Mengelola routing serta memproses permintaan dari pengguna.
+- **Models** – Representasi data yang terhubung langsung dengan database PostgreSQL Supabase.
+- **Services** – Tempat logika aplikasi seperti pengelolaan user, manajemen buku, atau integrasi ke Supabase.
+- **Traits** – Bagian logika yang digunakan ulang, seperti `ActivityLogger`, `CRUDTraits`, dan `KategoriTraits`.
+- **Imports/Exports** – Penanganan file Excel untuk kebutuhan input data massal.
+- **Middleware** – Pembatasan akses berdasarkan role dan status login.
 
-### Fitur Teknis Unggulan
+Aplikasi dapat berjalan secara hybrid, mendukung SSR (server-side rendering) sekaligus API endpoint untuk interaksi frontend modern bila dibutuhkan.
 
-- **Real-time Reactivity** - Livewire + Alpine.js untuk interactive UI
-- **Role-based Access Control** - Spatie Permission dengan 4 roles
-- **Custom Notification System** - Real-time notifications dengan trait
-- **PDF Generation** - DomPDF untuk 11+ jenis dokumen
-- **Excel Operations** - Import/export dengan validasi
-- **Design Token System** - Modern CSS architecture dengan dark mode
-- **Responsive Mobile-First** - Optimized untuk semua device
+### Fitur Teknis Utama
+
+- **Supabase Auth** – Sistem autentikasi modern dengan token-based security.
+- **Role-based Access Control** – Pengaturan hak akses berdasarkan peran (admin, petugas, user).
+- **Activity Logging** – Penyimpanan aktivitas pengguna otomatis ke tabel `activity_logs`.
+- **Kategori & Manajemen Buku** – CRUD buku, kategori, status ketersediaan, dan metadata buku.
+- **Excel Import/Export** – Mendukung unggah dan unduh data buku/kategori melalui Excel.
+- **Storage Management** – Penyimpanan gambar buku melalui Supabase Storage.
+- **Runtime Notification System** – Notifikasi sistem yang direkam ke database dan ditampilkan ke user.
+- **Responsive UI** – Tampilan dibuat fleksibel dan mobile-friendly.
+
 
 ## Testing
 
@@ -392,10 +406,19 @@ php artisan test --filter=NamaTest
 
 ### Konfigurasi Test
 
-- **Test Database**: SQLite in-memory untuk isolasi
-- **Test Suites**: Unit tests dan Feature tests
-- **Mock Services**: Mail, Queue menggunakan array/sync driver
-- **Coverage**: Enabled untuk monitoring code quality
+- **Test Database**: PostgreSQL (Supabase) khusus untuk testing, dipisahkan dari database development dan production.  
+  Gunakan URL Supabase testing atau jalankan instance PostgreSQL lokal untuk menghindari modifikasi data di Supabase utama.
+
+- **Test Suites**: Unit tests dan Feature tests dijalankan menggunakan koneksi database testing yang sudah dipre-seed dengan schema terbaru.
+
+- **Mock Services**:  
+  - Auth Supabase dimock menggunakan token/JWT palsu.  
+  - Storage dimock menggunakan filesystem lokal.  
+  - Email & Queue tetap menggunakan driver `array` atau `sync` untuk menghindari pengiriman ke layanan Supabase asli.
+
+- **Coverage**: Coverage tetap diaktifkan untuk memantau kualitas kode, terutama integrasi yang menyentuh Supabase SDK.
+
+
 
 ## Penggunaan
 
@@ -405,18 +428,15 @@ Setelah instalasi dan seeding database, Anda dapat login dengan akun default yan
 
 ### Workflow Umum
 
-1. **Admin** membuat periode akademik baru
-2. **Admin** menginput data mahasiswa dan dosen
-3. **Mahasiswa** login dan mengajukan judul TA
-4. **Dosen** mereview dan approve pengajuan
-5. **Mahasiswa** melakukan bimbingan dan mencatat progress
-6. **Mahasiswa** mendaftar sempro setelah syarat terpenuhi
-7. **Admin** membuat jadwal sempro
-8. **Dosen** memberikan penilaian sempro
-9. **Mahasiswa** melanjutkan bimbingan dan mendaftar sidang TA
-10. **Admin** membuat jadwal sidang TA
-11. **Dosen** memberikan penilaian sidang
-12. **Admin** menambahkan ke katalog TA setelah lulus
+1. **Admin** melengkapi katalog buku yang tersedia
+2. **Peminjam** mendaftarkan diri sebagai anggota perpustakaan 
+3. **Admin** menambahkan data anggota baru 
+4. **Peminjam** melakukan peminjaman buku 
+5. **Admin** memonitoring peminjaman buku yang dilakukan anggota 
+6. **Peminjam** mengembalikan buku 
+7. **Anggota** melihat riwayat peminjaman buku 
+8. **Admin** memonitoring pengembalian buku yang dilakukan anggota 
+9. **Admin** menambahkan koleksi buku baru ke katalog perpustakaan
 
 ## Deployment
 
@@ -501,6 +521,4 @@ Jika ada pertanyaan atau issues, silakan:
 
 ---
 
-**Developed with ❤️ for Sistem Informasi Institut Teknologi Kalimantan**
-
-*Last updated: November 2025*
+*Last updated: Desember 2025*
