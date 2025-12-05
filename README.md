@@ -12,8 +12,6 @@ Sistem ini memudahkan admin dalam pencatatan data perpustakaan serta memberikan 
 - [Konfigurasi](#konfigurasi)
 - [Role & Permissions](#role--permissions)
 - [Fitur Berdasarkan Role](#fitur-berdasarkan-role)
-- [Generate PDF](#generate-pdf)
-- [Import Data](#import-data)
 - [Screenshot](#screenshot)
 - [Struktur Database](#struktur-database)
 - [Penggunaan](#penggunaan)
